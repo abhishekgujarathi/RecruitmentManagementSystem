@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using RecruitmentManagementSystem.API.DTOS;
 using RecruitmentManagementSystem.API.Models;
+using RecruitmentManagementSystem.API.Services;
 
 namespace RecruitmentManagementSystem.API.Controllers
 {
@@ -12,34 +11,41 @@ namespace RecruitmentManagementSystem.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+
         public static User user = new();
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
+
 
         [HttpPost("register")]
-        public ActionResult<User> Register(UserDto request)
+        public async Task<ActionResult<User>> Register(UserDto request)
         {
-            var hashedPassword = new PasswordHasher<User>().HashPassword(user, request.Password);
-            user.UserName = request.UserName;
-            user.PasswordHash = hashedPassword;
-
+            var user = await _authService.RegisterAsync(request: request);
+            
+            if(user is null)
+            {
+                return BadRequest("user already exists.");
+            }
+            
             return Ok(user);
         }
 
         [HttpPost("login")]
-        public ActionResult<string> Login(UserDto request)
+        public async Task<ActionResult<string>> Login(UserDto request)
         {
-            if (request.UserName != user.UserName)
-            {
-                return BadRequest("User Not found");
+            var token = await _authService.LoginAsync(request: request);
+
+            if (token is null) {
+                return BadRequest("User/Password Invalid");
             }
 
-            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
-                == PasswordVerificationResult.Failed)
-            {
-                return BadRequest("Wrong password");
-            }
-
-            string token = "yeayyyyyyyyyyyyyyyyyyyyyyy";
-            return Ok("Login Sccussfull "+token);
+            return Ok(token);
         }
+
+
     }
 }
