@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RecruitmentManagementSystem.API.DTOS;
+using RecruitmentManagementSystem.API.DTOS.Request;
+using RecruitmentManagementSystem.API.DTOS.Response;
 using RecruitmentManagementSystem.API.Models;
+using RecruitmentManagementSystem.API.Services;
 
 namespace RecruitmentManagementSystem.API.Controllers
 {
@@ -12,34 +14,68 @@ namespace RecruitmentManagementSystem.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        public static User user = new();
+
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
+
 
         [HttpPost("register")]
-        public ActionResult<User> Register(UserDto request)
+        public async Task<ActionResult<User>> Register(RegisterRequestDto request)
         {
-            var hashedPassword = new PasswordHasher<User>().HashPassword(user, request.Password);
-            user.UserName = request.UserName;
-            user.PasswordHash = hashedPassword;
+            var user = await _authService.RegisterAsync(request: request);
+
+            if (user is null)
+            {
+                return BadRequest("user already exists or invalid inputs.");
+            }
 
             return Ok(user);
         }
 
         [HttpPost("login")]
-        public ActionResult<string> Login(UserDto request)
+        public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
         {
-            if (request.UserName != user.UserName)
+            var resultResponse = await _authService.LoginAsync(request: request);
+
+            if (resultResponse is null)
             {
-                return BadRequest("User Not found");
+                return BadRequest("User/Password Invalid");
             }
 
-            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
-                == PasswordVerificationResult.Failed)
+            return Ok(resultResponse);
+        }
+
+
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<TokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
+        {
+            var result = await _authService.RefreshTokensAsync(request);
+
+            if (result is null || result.AuthToken is null || result.RefreshToken is null)
             {
-                return BadRequest("Wrong password");
+                return BadRequest("Invalid refresh token");
             }
 
-            string token = "yeayyyyyyyyyyyyyyyyyyyyyyy";
-            return Ok("Login Sccussfull "+token);
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("auth")]
+        public ActionResult<string> Auth()
+        {
+            return Ok("Authed");
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("auth-admin")]
+        public ActionResult<string> AuthAdmin()
+        {
+            return Ok("Authed");
         }
     }
 }
