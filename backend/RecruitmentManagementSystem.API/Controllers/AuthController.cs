@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RecruitmentManagementSystem.API.DTOS;
+using RecruitmentManagementSystem.API.DTOS.Request;
+using RecruitmentManagementSystem.API.DTOS.Response;
 using RecruitmentManagementSystem.API.Models;
 using RecruitmentManagementSystem.API.Services;
 
@@ -12,7 +15,6 @@ namespace RecruitmentManagementSystem.API.Controllers
     public class AuthController : ControllerBase
     {
 
-        public static User user = new();
         private readonly IAuthService _authService;
 
         public AuthController(IAuthService authService)
@@ -22,30 +24,58 @@ namespace RecruitmentManagementSystem.API.Controllers
 
 
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDto request)
+        public async Task<ActionResult<User>> Register(RegisterRequestDto request)
         {
             var user = await _authService.RegisterAsync(request: request);
-            
-            if(user is null)
+
+            if (user is null)
             {
-                return BadRequest("user already exists.");
+                return BadRequest("user already exists or invalid inputs.");
             }
-            
+
             return Ok(user);
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(UserDto request)
+        public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
         {
-            var token = await _authService.LoginAsync(request: request);
+            var resultResponse = await _authService.LoginAsync(request: request);
 
-            if (token is null) {
+            if (resultResponse is null)
+            {
                 return BadRequest("User/Password Invalid");
             }
 
-            return Ok(token);
+            return Ok(resultResponse);
         }
 
 
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<TokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
+        {
+            var result = await _authService.RefreshTokensAsync(request);
+
+            if (result is null || result.AuthToken is null || result.RefreshToken is null)
+            {
+                return BadRequest("Invalid refresh token");
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("auth")]
+        public ActionResult<string> Auth()
+        {
+            return Ok("Authed");
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("auth-admin")]
+        public ActionResult<string> AuthAdmin()
+        {
+            return Ok("Authed");
+        }
     }
 }
