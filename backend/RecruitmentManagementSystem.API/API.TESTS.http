@@ -1,0 +1,104 @@
+@hostname = localhost:7081
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoicGV0ZXIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImYwNzE4OWZkLWYzOWItNDc3ZC1kMzM2LTA4ZGRmZGExMzkxOCIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlJlY3J1aXRlciIsImV4cCI6MTc1ODk5NjU3OCwiaXNzIjoiUmVjcnVpdG1lbnRNYW5hZ2VtZW50U3lzdGVtIiwiYXVkIjoiVXNlcnMifQ.VXAjdmL-MDm82s6Gy_yLX8k1IZJwdRp6_NiuQgfLfUw
+
+
+# ------for job creation api-------------
+
+### 1. Base Case: Successful Job Creation 
+# Tests successful authorization, valid payload, and service logic.
+
+POST https://{{hostname}}/api/recruiters/job
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "Senior Cloud Architect",
+    "details": "Design and deploy scalable infrastructure on Azure.",
+    "typeName": "Full-Time",
+    "responsibilities": "Lead team, manage deployment pipelines, optimize cost.",
+    "location": "Remote",
+    "minimumExperienceReq": 8,
+    "openingsCount": 1,
+    "deadlineDate": "2026-11-15T00:00:00Z"
+}
+
+###
+
+### 2. Edge Case: Missing Authorization (Unauthorized)
+# Tests the [Authorize] attribute blocking the request.
+
+POST https://{{hostname}}/api/recruiters/job
+Content-Type: application/json
+
+{
+    "title": "Unauthorized Test",
+    "details": "This should be blocked by the server.",
+    "typeName": "Contract",
+    "location": "Remote",
+    "minimumExperienceReq": 1,
+    "openingsCount": 1,
+    "deadlineDate": "2026-01-01T00:00:00Z"
+}
+
+###
+
+### 3. Edge Case: Missing Required Fields (Bad Request)
+# Tests the DTO validation (Title, Details, TypeName, Location must not be empty).
+
+POST https://{{hostname}}/api/recruiters/job
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "",             
+    "details": "Incomplete data for testing validation.",
+    "typeName": "",     
+    "responsibilities": null,
+    "location": "London",
+    "minimumExperienceReq": 5,
+    "openingsCount": 1,
+    "deadlineDate": "2026-11-30T00:00:00Z"
+}
+###
+# ------for job creation api-------------
+
+
+# ------for job view api-------------
+# Replace with a known, existing JobId from your database (e.g., from your seeding data)
+@existingJobId = c2c2c2c2-0000-0000-0000-000000000001
+# A known non-existent GUID
+@nonExistentJobId = E5E5E5E5-0000-0000-0000-000000000005
+
+
+### 1. Base Case: Get All Jobs (Public Read)
+# Expected: 200 OK with a JSON array of JobResponseDto objects.
+
+GET https://{{hostname}}/api/Jobs
+Accept: application/json
+
+###
+
+### 2. Base Case: Get Specific Job by ID
+# Expected: 200 OK with a single JobResponseDto object.
+
+GET https://{{hostname}}/api/jobs/{{existingJobId}}
+Accept: application/json
+
+###
+
+### 3. Edge Case: Job Not Found (Missing Resource)
+# Current Implementation Expected: 400 Bad Request (due to incorrect controller status code use).
+# Correct API Expected: 404 Not Found.
+
+GET https://{{hostname}}/api/Jobs/{{nonExistentJobId}}
+Accept: application/json
+
+###
+
+### 4. Edge Case: Invalid GUID Format (Route Parsing Failure)
+# Expected: 400 Bad Request (framework rejects the non-GUID path parameter).
+
+GET https://{{hostname}}/api/Jobs/INVALID-UUID-STRING
+Accept: application/json
+# ------for job view api-------------
+

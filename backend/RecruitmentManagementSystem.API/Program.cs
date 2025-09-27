@@ -41,6 +41,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
 
 // Register data access and business logic
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRecruitersService, RecruitersService>();
+
 
 
 var app = builder.Build();
