@@ -1,8 +1,11 @@
-﻿namespace RecruitmentManagementSystem.API.DTOS
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace RecruitmentManagementSystem.API.DTOS
 {
     public class UserDto
     {
-        public string UserName { get; set; } = string.Empty;
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
 }

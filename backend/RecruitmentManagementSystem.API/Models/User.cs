@@ -1,19 +1,34 @@
-﻿
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace RecruitmentManagementSystem.API.Models
 {
     public class User
     {
-        public Guid Id { get; set; }
-        public required string UserName { get; set; } = string.Empty;
+        // User(Uid, Fname, Lname, email, mobNumber, DOB, gender, URid, pwdHash, createdDate, lastLogin, active) , pk[Uid], fk[URid]
+        [Key]
+        public Guid UserId { get; set; }
+
+        public required string Fname { get; set; }
+        public required string Lname { get; set; }
         public required string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
-        public required string Role { get; set; } = string.Empty;
+
         public required string MobileNumber { get; set; } = string.Empty;
+        public DateTime? DOB { get; set; }
+        public string? Gender { get; set; }
+
+        // Foreign key for UserRole
+        public Guid UserRoleId { get; set; }
+        public UserRole UserRole { get; set; } = default!;
+
         public required DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? LastLogin { get; set; }
+        public bool IsActive { get; set; } = true;
+
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
-        
+
+        // makes easy to access users profile if there
+        public CandidateProfile? CandidateProfile { get; set; }
     }
 }

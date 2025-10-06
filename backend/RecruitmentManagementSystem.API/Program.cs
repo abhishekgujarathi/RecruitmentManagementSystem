@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 using Microsoft.IdentityModel.Tokens;
 using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.Services;
 using Scalar.AspNetCore;
 using System.Text;
-
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +16,12 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// register automapper
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddMaps(typeof(MappingProfile).Assembly);
+});
 
 // Register AppDbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -42,6 +48,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
 // Register data access and business logic
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRecruitersService, RecruitersService>();
+builder.Services.AddScoped<ICandidateService, CandidateService>();
 
 
 

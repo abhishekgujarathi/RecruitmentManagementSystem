@@ -36,7 +36,9 @@ namespace RecruitmentManagementSystem.API.Services
             // getting the user from table if there or default,
             // FirstOrDefaultAsync gets first record for the given id or column value
             // similar to select * from tabl where col=val;
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == request.UserName);
+            var user = await _context.Users
+                .Include(u => u.UserRole)
+                .FirstOrDefaultAsync(u => u.Email == request.Email);
 
 
             // call user table to check if anyasync username present
@@ -68,39 +70,47 @@ namespace RecruitmentManagementSystem.API.Services
 
         public async Task<User?> RegisterAsync(RegisterRequestDto request)
         {
-
-            // call user table to check if any user there with same req.username => use anyasync
-            if (await _context.Users.AnyAsync(u => u.UserName == request.UserName))
+            // call user table to check if any user exists with the same email
+            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             {
                 return null;
             }
 
-            // check if role is invalid or admin
-            if (request.Role == "Admin")
+            // requested role is invalid or admin?
+            var userRole = await _context.UserRoles.FirstOrDefaultAsync(ur => ur.RoleName == request.Role);
+
+            if (userRole is null)
                 return null;
 
-            // create user object
+            if (userRole.RoleName == "Admin")
+                return null;
+
+            // creating user object
             var user = new User()
             {
-                UserName = request.UserName,
+                Fname = request.Fname,
+                Lname = request.Lname,
                 Email = request.Email,
-                Role = request.Role,
-                MobileNumber= request.MobileNumber,
+                UserRoleId = userRole.UserRoleId, 
+                MobileNumber = request.MobileNumber,
+                DOB = request.DOB,
+                Gender = request.Gender,
+                IsActive = true,
                 CreatedDate = DateTime.UtcNow
             };
 
-            var hashedPassword = new PasswordHasher<User>().HashPassword(user, request.Password);
-            user.UserName = request.UserName;
-            user.PasswordHash = hashedPassword;
+            var passwordHasher = new PasswordHasher<User>();
+            user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
             // save that object to db
             _context.Users.Add(user);
 
-            // commit the changes
+            // commit the changes in db
             await _context.SaveChangesAsync();
 
             return user;
         }
+
 
         public async Task<TokenResponseDto?> RefreshTokensAsync(RefreshTokenRequestDto request)
         {
@@ -159,9 +169,9 @@ namespace RecruitmentManagementSystem.API.Services
         {
             List<Claim> claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Name, user.Fname),
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Role, user.UserRole.RoleName)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!));

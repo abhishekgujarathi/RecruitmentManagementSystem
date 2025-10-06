@@ -1,0 +1,36 @@
+    Skills(SkId, name, active) , pk[SkId]
+
+    --- User ---
+    [done] 
+    UserRole(URid, RoleName, active) , pk[URid]
+
+    [done] 
+    User(Uid, Fname, Lname, email, mobNumber, DOB, gender, URid, pwdHash, createdDate, lastLogin, active) , pk[Uid], fk[URid]
+    --- User ---
+
+    --- Candidate ---
+    CandidateProfile(CPid, Uid, address,city, state, country, postalCode) , pk[CPid], fk[Uid]
+
+    SocialPlatform(SPid, Name), pk[SPid]
+    CandidateSocials(CSid, CPid, SPid, Link), pk[CSid], fk[CPid, SPid]
+
+    Education(EdId, CPid, InstiuteName, DegreeType, FieldOfStudy, PerScore, StartDate, EndDate, isCurrent) , pk[EdId], fk[CPid]
+
+    Experience(ExId, CPid, CompanyName, Position, DurationYears, StartDate, EndDate, isCurrent, JobDescription) , pk[ExId], fk[CPid]
+
+    CandidateSkills = [CSkid, CPid, Skid, ExpYears, ProficiencyLevel] , pk[CSkid], fk[CPid,SkId], ProficiencyLevel[beginner, intermediate, expert]
+
+    --- Candidate ---
+
+    CVStorage = [CVSid, CPid, FileName, Path, UploadDate, FileSize]
+
+
+
+
+
+
+    Relationship Details:
+    RelationshipTypeDescriptionUserRole → User1:MOne role can be assigned to many users
+    User → CandidateProfile 1:1Each user has one candidate profile (optional)
+    CandidateProfile → Education1:MA candidate can have multiple education recordsCandidateProfile → Experience1:MA candidate can have multiple work experiencesCandidateProfile → CandidateSocials1:MA candidate can have multiple social linksSocialPlatform → CandidateSocials1:MEach platform can be used by many candidatesCandidateProfile → CandidateSkills1:MA candidate can have multiple skillsSkills → CandidateSkills1:MEach skill can be possessed by many candidatesCandidateProfile → CVStorage1:MA candidate can upload multiple CV versions
+    Recommendations:

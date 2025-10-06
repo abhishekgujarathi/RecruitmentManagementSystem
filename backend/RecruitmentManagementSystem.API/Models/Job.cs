@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace RecruitmentManagementSystem.API.Models
 {
     public class Job
-        //Jobs = [Jid, JDid, createdBy, createdDate, LastModifiedDate, deadline_date]
+    //Jobs = [Jid, JDid, createdBy, createdDate, LastModifiedDate, deadline_date]
     {
         // pk (Jid)
         [Key]
@@ -15,7 +15,7 @@ namespace RecruitmentManagementSystem.API.Models
         public required Guid JobDescriptionId { get; set; }
         public JobDescription JobDescription { get; set; } = default!; // this is callled navigation property filled if needed directly by efcore
 
-        public required int OpeningsCount { get; set; } 
+        public required int OpeningsCount { get; set; }
 
         // createdBy fk to the Recruiter User
         // Assuming your User primary key (Uid) is a Guid

@@ -50,10 +50,6 @@ namespace RecruitmentManagementSystem.API.Controllers
         public async Task<ActionResult> GetJobAsync([FromRoute] Guid jobID)
         {
 
-            // parsing guid fromstring guid
-            //Guid.TryParse(jobID, out Guid gJobID); not needed now
-            // Guid gJobID createdd automatically
-
             var job = await _context.Jobs
                 .Include(job => job.JobDescription)
                 .ThenInclude(jd => jd.JobType)

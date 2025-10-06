@@ -1,6 +1,5 @@
 @hostname = localhost:7081
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoicGV0ZXIiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImYwNzE4OWZkLWYzOWItNDc3ZC1kMzM2LTA4ZGRmZGExMzkxOCIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlJlY3J1aXRlciIsImV4cCI6MTc1ODk5NjU3OCwiaXNzIjoiUmVjcnVpdG1lbnRNYW5hZ2VtZW50U3lzdGVtIiwiYXVkIjoiVXNlcnMifQ.VXAjdmL-MDm82s6Gy_yLX8k1IZJwdRp6_NiuQgfLfUw
-
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiQWJoaSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiMGEzM2MyMDAtYzlmMi00NTQ3LTgxMGEtYjMzMzdhNzJkNzMzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQ2FuZGlkYXRlIiwiZXhwIjoxNzU5Njg1MzM5LCJpc3MiOiJSZWNydWl0bWVudE1hbmFnZW1lbnRTeXN0ZW0iLCJhdWQiOiJVc2VycyJ9.FHoY7JkyL4Hlnt8eTrZVv_yBz2pnB1SJ3yV4G3NP8mM
 
 # ------for job creation api-------------
 
@@ -100,5 +99,89 @@ Accept: application/json
 
 GET https://{{hostname}}/api/Jobs/INVALID-UUID-STRING
 Accept: application/json
+
+###
 # ------for job view api-------------
 
+GET https://{{hostname}}/api/Candidate/profile
+Authorization: Bearer {{token}}
+
+###
+
+PATCH https://{{hostname}}/api/Candidate/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{
+  "candidateProfileId": "29d665b6-7013-4170-a8eb-844f2d79d356",
+  "address": "123 Main Street, Apartment 4B",
+  "city": "Delhi",
+  "state": "Maharashtra",
+  "country": "India",
+  "postalCode": "400001",
+  "candidateSocials": [],
+  "educations": [
+    {
+      "educationId": "b3f2c0e1-6f2a-4a6c-9f8a-1a2b3c4d5e01",
+      "instituteName": "St. Xavier's College, Mumbai",
+      "degreeType": "B.Tech",
+      "fieldOfStudy": "Computer Science",
+      "percentageScore": 78.45,
+      "startDate": "2016-07-01T00:00:00",
+      "endDate": "2020-05-31T00:00:00",
+      "isCurrent": false
+    },
+    {
+      "educationId": "c4d3f1a2-7b3c-4d8e-9a0b-2c3d4e5f6a02",
+      "instituteName": "Mumbai Central Higher Secondary School",
+      "degreeType": "Higher Secondary (12th)",
+      "fieldOfStudy": "Science",
+      "percentageScore": 86.2,
+      "startDate": "2014-06-01T00:00:00",
+      "endDate": "2016-04-30T00:00:00",
+      "isCurrent": false
+    }
+  ],
+  "experiences": [
+    {
+      "experienceId": "d5e4f3b2-8c4d-4e9f-0a1b-3c4d5e6f7a03",
+      "companyName": "InnoTech Solutions Pvt. Ltd.",
+      "position": "Software Engineer",
+      "durationYears": 2.5,
+      "startDate": "2020-07-01T00:00:00",
+      "endDate": "2022-06-30T00:00:00",
+      "isCurrent": false,
+      "jobDescription": "Worked on backend APIs using .NET Core, implemented authentication and REST endpoints, wrote unit tests and integrated CI/CD pipelines."
+    },
+    {
+      "experienceId": "e6f5a4c3-9d5e-4f0a-1b2c-4d5e6f7a8b04",
+      "companyName": "QuickStart Internships",
+      "position": "Software Intern",
+      "durationYears": 0.5,
+      "startDate": "2019-06-01T00:00:00",
+      "endDate": "2019-11-30T00:00:00",
+      "isCurrent": false,
+      "jobDescription": "Assisted in developing small features, bug fixes and wrote documentation. Gained exposure to agile practices."
+    }
+  ],
+  "candidateSkills": [
+    {
+      "candidateSkillId": "cf289e20-a31c-4243-8054-184d5a43aacc",
+      "skillId": "ea4c1630-94a8-45b1-9534-9e6ae77b759c",
+      "experienceYears": 5,
+      "proficiencyLevel": null
+    },
+    {
+      "candidateSkillId": "e1292880-d00d-4816-982f-570488bd4e07",
+      "skillId": "efe6dbb4-9f09-4f8b-80a1-e31cfc8b31ee",
+      "experienceYears": 4,
+      "proficiencyLevel": null
+    },
+    {
+      "candidateSkillId": "a1d53639-7d2f-43b8-87b8-664a44806835",
+      "skillId": "d3f649c8-8079-44cf-ae21-12095c44f8de",
+      "experienceYears": null,
+      "proficiencyLevel": null
+    }
+  ],
+  "cvStorages": []
+}

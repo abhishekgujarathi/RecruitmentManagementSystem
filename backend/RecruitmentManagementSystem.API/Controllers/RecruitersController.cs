@@ -42,5 +42,68 @@ namespace RecruitmentManagementSystem.API.Controllers
 
             return Ok(createdJob);
         }
+
+
+        [Authorize(Roles = "Recruiter")]
+        [HttpPatch("jobs/{jobId}")]
+        public async Task<IActionResult> UpdateJob(Guid jobId, [FromBody] JobUpdateRequestDto request)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+                // parsing string to guid
+                Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+                var result = await _recruitersService.UpdateJobAsync(jobId, request, recruiterId);
+
+                if (result == null)
+                {
+                    return NotFound(new { message = "Job not found or invalid job type" });
+                }
+
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
+        [Authorize(Roles = "Recruiter")]
+        [HttpDelete("jobs/{jobId}")]
+        public async Task<IActionResult> DeleteJob(Guid jobId)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+                // parsing string to guid
+                Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+
+
+                var result = await _recruitersService.DeleteJobAsync(jobId, recruiterId);
+
+                if (!result)
+                {
+                    return NotFound(new { message = "Job not found" });
+                }
+
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
     }
 }
