@@ -24,6 +24,8 @@ namespace RecruitmentManagementSystem.API.Services
         Task<bool> DeleteProfileAsync(Guid candidateProfileId);
         Task<bool> HasProfileAsync(Guid userId);
 
+        // --- APPLY ---
+        Task<bool> ApplyToJobAsync(Guid userId, Guid jobId);
 
         // ??? for later toseperate everythin
 
@@ -85,7 +87,8 @@ namespace RecruitmentManagementSystem.API.Services
             _context = context;
             _mapper = mapper;
         }
-        //public async Task<List<CandidateProfile>> GetProfileByUserIdAsync(Guid userId)
+
+        //Profile Methods
         public async Task<CandidateProfileDto?> GetProfileByUserIdAsync(Guid userId)
         {
             var profile = await _context.CandidateProfiles
@@ -153,13 +156,6 @@ namespace RecruitmentManagementSystem.API.Services
         }
 
 
-
-        public Task<bool> HasProfileAsync(Guid userId)
-        {
-            // ??? need to implement this later
-            throw new NotImplementedException();
-        }
-
         public async Task<CandidateProfileDto> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto)
         {
             var profile = await _context.CandidateProfiles
@@ -221,6 +217,49 @@ namespace RecruitmentManagementSystem.API.Services
             await _context.SaveChangesAsync();
             return _mapper.Map<CandidateProfileDto>(profile);
         }
+        public Task<bool> HasProfileAsync(Guid userId)
+        {
+            // ??? need to implement this later
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> ApplyToJobAsync(Guid userId, Guid jobId)
+        {
+            var candidateProfile = await _context.CandidateProfiles
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            // check candidate
+            if (candidateProfile == null)
+                throw new Exception("Candidate profile not found.");
+
+            var jobExists = await _context.Jobs.AnyAsync(j => j.JobId == jobId);
+            if (!jobExists)
+                throw new Exception("Job not found.");
+
+            // check if applied
+            bool alreadyApplied = await _context.JobApplications
+                .AnyAsync(a => a.CandidateProfileId == candidateProfile.CandidateProfileId && a.JobId == jobId);
+
+            if (alreadyApplied)
+                throw new Exception("Already applied to this job.");
+
+            // make new job application
+            var newApplication = new JobApplication
+            {
+                JobApplicationId = Guid.NewGuid(),
+                CandidateProfileId = candidateProfile.CandidateProfileId,
+                JobId = jobId,
+                ApplicationDate = DateTime.UtcNow,
+                CurrentStatus = "Pending"
+            };
+
+            // saving commiting
+            _context.JobApplications.Add(newApplication);
+            var result = await _context.SaveChangesAsync();
+
+            return result > 0;
+        }
+
     }
 
 }

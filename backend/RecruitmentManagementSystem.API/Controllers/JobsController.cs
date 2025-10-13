@@ -37,7 +37,9 @@ namespace RecruitmentManagementSystem.API.Controllers
                         Details = job.JobDescription.Details,
                         Location = job.JobDescription.Location,
                         MinimumExperienceReq = job.JobDescription.MinimumExperienceReq,
-                        JobType = job.JobDescription.JobType.TypeName
+                        JobType = job.JobDescription.JobType.TypeName,
+                        Responsibilities = job.JobDescription.Responsibilty
+
                     },
                     CreatedByUserId = job.CreatedByUserId
                 })
@@ -68,13 +70,14 @@ namespace RecruitmentManagementSystem.API.Controllers
                         Details = job.JobDescription.Details,
                         Location = job.JobDescription.Location,
                         MinimumExperienceReq = job.JobDescription.MinimumExperienceReq,
-                        JobType = job.JobDescription.JobType.TypeName
+                        JobType = job.JobDescription.JobType.TypeName,
+                        Responsibilities = job.JobDescription.Responsibilty
                     },
                     CreatedByUserId = job.CreatedByUserId
                 })
                 .FirstOrDefaultAsync();
 
-            if(job is null)
+            if (job is null)
             {
                 return BadRequest("Invalid job id");
             }

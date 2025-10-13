@@ -23,6 +23,7 @@ namespace RecruitmentManagementSystem.API.Services
         //return true if deleted 
 
         // check-applications
+        Task<IEnumerable<JobApplicationDto>> GetJobApplicationsAsync(Guid jobId, Guid recruiterId);
 
 
     }
@@ -210,5 +211,33 @@ namespace RecruitmentManagementSystem.API.Services
                 CreatedByUserId = job.CreatedByUserId
             };
         }
+
+        public async Task<IEnumerable<JobApplicationDto>> GetJobApplicationsAsync(Guid jobId, Guid recruiterId)
+        {
+            var job = await _context.Jobs
+                .FirstOrDefaultAsync(j => j.JobId == jobId);
+
+            if (job == null)
+                throw new Exception("Job not found.");
+
+            if (job.CreatedByUserId != recruiterId)
+                throw new UnauthorizedAccessException("You can only view applications for your own jobs.");
+
+            var applications = await _context.JobApplications
+                .Include(a => a.CandidateProfile)
+                .ThenInclude(cp => cp.User)
+                .Where(a => a.JobId == jobId)
+                .Select(a => new JobApplicationDto
+                {
+                    JobApplicationId = a.JobApplicationId,
+                    CandidateName = a.CandidateProfile.User.Fname + " " + a.CandidateProfile.User.Lname,
+                    ApplicationDate = a.ApplicationDate,
+                    CurrentStatus = a.CurrentStatus
+                })
+                .ToListAsync();
+
+            return applications;
+        }
+
     }
 }

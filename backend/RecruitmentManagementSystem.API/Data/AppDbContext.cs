@@ -25,6 +25,7 @@ namespace RecruitmentManagementSystem.API.Data
         public DbSet<Skill> Skills { get; set; }
         public DbSet<CandidateSkill> CandidateSkills { get; set; }
         public DbSet<CVStorage> CVStorages { get; set; }
+        public DbSet<JobApplication> JobApplications { get; set; }
         // --- candidate ---
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

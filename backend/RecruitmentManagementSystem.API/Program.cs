@@ -10,6 +10,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(opt =>
+{
+    opt.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -63,6 +72,10 @@ if (app.Environment.IsDevelopment())
     });
     app.MapScalarApiReference();
 }
+
+    
+
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 

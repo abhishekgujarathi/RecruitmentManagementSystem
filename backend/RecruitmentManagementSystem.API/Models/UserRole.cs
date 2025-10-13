@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace RecruitmentManagementSystem.API.Models
 {
@@ -11,6 +12,7 @@ namespace RecruitmentManagementSystem.API.Models
         public bool active { get; set; } = true;
 
         // if needed to get users of sepcificrole 
+        [JsonIgnore]
         public ICollection<User> Users { get; set; } = new List<User>();
     }
 }

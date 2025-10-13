@@ -78,11 +78,26 @@ namespace RecruitmentManagementSystem.API.Controllers
         }
 
 
+        [Authorize(Roles = "Candidate")]
+        [HttpPost("apply/{jobId}")]
+        public async Task<IActionResult> ApplyToJob(Guid jobId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            Guid.TryParse(userIdClaim?.Value, out Guid userId);
+
+            bool success = await _candidateService.ApplyToJobAsync(userId, jobId);
+
+            if (!success)
+                return BadRequest("Failed to apply for the job or already applied.");
+
+            return Ok(new { message = "Application submitted successfully." });
+        }
+
 
         // #####################################################
 
         // ??? for later plans making everything seperate.
-        
+
         // #####################################################
 
         // -------- PROFILE --------

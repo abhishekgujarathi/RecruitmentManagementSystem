@@ -105,5 +105,32 @@ namespace RecruitmentManagementSystem.API.Controllers
             }
         }
 
+        [Authorize(Roles = "Recruiter")]
+        [HttpGet("jobs/{jobId}/applications")]
+        public async Task<IActionResult> GetJobApplications(Guid jobId)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+
+                var applications = await _recruitersService.GetJobApplicationsAsync(jobId, recruiterId);
+
+                if (applications == null || !applications.Any())
+                    return NotFound(new { message = "No applications found for this job." });
+
+                return Ok(applications);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
     }
 }
