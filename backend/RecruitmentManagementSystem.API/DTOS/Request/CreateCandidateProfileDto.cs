@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace RecruitmentManagementSystem.API.Dtos
+namespace RecruitmentManagementSystem.API.DTOS
 {
     public class CreateCandidateProfileDto
     {

@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using RecruitmentManagementSystem.API.Data;
-using RecruitmentManagementSystem.API.Dtos;
+using RecruitmentManagementSystem.API.DTOS;
 using RecruitmentManagementSystem.API.DTOS.Request;
 using RecruitmentManagementSystem.API.DTOS.Response;
 using RecruitmentManagementSystem.API.Models;
-using RecruitmentManagementSystem.API.Services;
 
-namespace RecruitmentManagementSystem.API.Services
+namespace RecruitmentManagementSystem.API.Services.Candidate
 {
     public interface ICandidateService
 
@@ -28,52 +27,6 @@ namespace RecruitmentManagementSystem.API.Services
         Task<bool> ApplyToJobAsync(Guid userId, Guid jobId);
 
         // ??? for later toseperate everythin
-
-        // // --- EDUCATION  ---
-        // Task<List<EducationDto>> GetEducationsAsync(Guid candidateProfileId);
-        // Task<EducationDto?> GetEducationByIdAsync(Guid educationId);
-        // Task<EducationDto> AddEducationAsync(Guid candidateProfileId, CreateEducationDto dto);
-        // Task<EducationDto> UpdateEducationAsync(Guid educationId, UpdateEducationDto dto);
-        // Task<bool> DeleteEducationAsync(Guid educationId);
-        // Task<bool> SetCurrentEducationAsync(Guid candidateProfileId, Guid educationId);
-
-        // // --- EXPERIENCE  ---
-        // Task<List<ExperienceDto>> GetExperiencesAsync(Guid candidateProfileId);
-        // Task<ExperienceDto?> GetExperienceByIdAsync(Guid experienceId);
-        // Task<ExperienceDto> AddExperienceAsync(Guid candidateProfileId, CreateExperienceDto dto);
-        // Task<ExperienceDto> UpdateExperienceAsync(Guid experienceId, UpdateExperienceDto dto);
-        // Task<bool> DeleteExperienceAsync(Guid experienceId);
-        // Task<bool> SetCurrentExperienceAsync(Guid candidateProfileId, Guid experienceId);
-
-        // // --- SKILLS  ---
-        // Task<List<CandidateSkillDto>> GetSkillsAsync(Guid candidateProfileId);
-        // Task<CandidateSkillDto?> GetSkillByIdAsync(Guid candidateSkillId);
-        // Task<CandidateSkillDto> AddSkillAsync(Guid candidateProfileId, CreateCandidateSkillDto dto);
-        // Task<CandidateSkillDto> UpdateSkillAsync(Guid candidateSkillId, UpdateCandidateSkillDto dto);
-        // Task<bool> DeleteSkillAsync(Guid candidateSkillId);
-        // Task<List<SkillDto>> GetAllAvailableSkillsAsync();
-
-        // // --- CV/RESUME  ---
-        // Task<List<CVStorageDto>> GetCVsAsync(Guid candidateProfileId);
-        // Task<CVStorageDto?> GetCVByIdAsync(Guid cvStorageId);
-        // Task<CVStorageDto> UploadCVAsync(Guid candidateProfileId, CreateCVStorageDto dto);
-        // Task<bool> DeleteCVAsync(Guid cvStorageId);
-        // Task<string?> GetCVFilePathAsync(Guid cvStorageId);
-        // Task<bool> SetCVActiveStatusAsync(Guid cvStorageId, bool isActive);
-
-        // // --- SOCIAL LINKS  ---
-        // Task<List<CandidateSocialDto>> GetSocialLinksAsync(Guid candidateProfileId);
-        // Task<CandidateSocialDto?> GetSocialLinkByIdAsync(Guid candidateSocialId);
-        // Task<CandidateSocialDto> AddSocialLinkAsync(Guid candidateProfileId, CreateCandidateSocialDto dto);
-        // Task<CandidateSocialDto> UpdateSocialLinkAsync(Guid candidateSocialId, UpdateCandidateSocialDto dto);
-        // Task<bool> DeleteSocialLinkAsync(Guid candidateSocialId);
-        // Task<List<SocialPlatformDto>> GetAllSocialPlatformsAsync();
-
-        // // --- COMPLETE PROFILE OPERATIONS ---
-        // Task<CompleteCandidateProfileDto?> GetCompleteProfileAsync(Guid candidateProfileId);
-        // Task<int> GetProfileCompletionPercentageAsync(Guid candidateProfileId);
-
-
     }
 
 
@@ -92,10 +45,13 @@ namespace RecruitmentManagementSystem.API.Services
         public async Task<CandidateProfileDto?> GetProfileByUserIdAsync(Guid userId)
         {
             var profile = await _context.CandidateProfiles
+                .Include(cp => cp.User)
                 .Include(cp => cp.Educations)
                 .Include(cp => cp.Experiences)
                 .Include(cp => cp.CandidateSocials)
+                    .ThenInclude(cs => cs.SocialPlatform)
                 .Include(cp => cp.CandidateSkills)
+                    .ThenInclude(cs => cs.Skill)
                 .Include(cp => cp.CVStorages)
                 .FirstOrDefaultAsync(cp => cp.UserId == userId);
 
@@ -106,9 +62,9 @@ namespace RecruitmentManagementSystem.API.Services
 
             return resultDto;
         }
-
         public async Task<CandidateProfileDto?> GetProfileByIdAsync(Guid candidateProfileId)
         {
+            // not used anywhere
             var profile = await _context.CandidateProfiles
                 .Include(cp => cp.Educations)
                 .Include(cp => cp.Experiences)
@@ -120,9 +76,22 @@ namespace RecruitmentManagementSystem.API.Services
             if (profile == null)
                 return null;
 
-            var resultDto = _mapper.Map<CandidateProfileDto>(profile);
+            Console.WriteLine("=== DEBUG SKILLS ===");
 
-            return resultDto;
+            if (profile?.CandidateSkills != null)
+            {
+                foreach (var s in profile.CandidateSkills)
+                {
+                    Console.WriteLine($"SkillId: {s.SkillId}");
+                    Console.WriteLine($"Skill Navigation Null?: {s.Skill == null}");
+                    if (s.Skill != null)
+                    {
+                        Console.WriteLine($"Skill.Name: {s.Skill.Name}");
+                    }
+                }
+            }
+
+            return _mapper.Map<CandidateProfileDto>(profile);
         }
 
         public async Task<CandidateProfileDto> CreateProfileAsync(Guid userId, CreateCandidateProfileDto dto)
@@ -163,59 +132,55 @@ namespace RecruitmentManagementSystem.API.Services
                 .Include(cp => cp.Experiences)
                 .Include(cp => cp.CandidateSkills)
                 .Include(cp => cp.CandidateSocials)
+                .Include(cp => cp.CVStorages)
                 .FirstOrDefaultAsync(cp => cp.UserId == userId);
 
             if (profile == null)
-            {
                 throw new KeyNotFoundException("Profile not found");
-            }
 
-            // Update basic fields (required)
-            profile.Address = dto.Address;
-            profile.City = dto.City;
-            profile.State = dto.State;
-            profile.Country = dto.Country;
-            profile.PostalCode = dto.PostalCode;
+            // Begin transaction for atomic updates
+            await using var transaction = await _context.Database.BeginTransactionAsync();
 
-            // Replace all collections completely
-            profile.Educations.Clear();
-            if (dto.Educations?.Any() == true)
+            try
             {
-                foreach (var eduDto in dto.Educations)
-                {
-                    profile.Educations.Add(_mapper.Map<Education>(eduDto));
-                }
-            }
+                // Update basic profile fields
+                profile.Address = dto.Address;
+                profile.City = dto.City;
+                profile.State = dto.State;
+                profile.Country = dto.Country;
+                profile.PostalCode = dto.PostalCode;
 
-            profile.Experiences.Clear();
-            if (dto.Experiences?.Any() == true)
+                // --- Replace collections safely ---
+
+                profile.Educations.Clear();
+                if (dto.Educations?.Any() == true)
+
+                    profile.Educations = dto.Educations.Select(e => _mapper.Map<Education>(e)).ToList();
+
+                profile.Experiences.Clear();
+                if (dto.Experiences?.Any() == true)
+                    profile.Experiences = dto.Experiences.Select(e => _mapper.Map<Experience>(e)).ToList();
+
+                profile.CandidateSkills.Clear();
+                if (dto.CandidateSkills?.Any() == true)
+                    profile.CandidateSkills = dto.CandidateSkills.Select(s => _mapper.Map<CandidateSkill>(s)).ToList();
+
+                profile.CandidateSocials.Clear();
+                if (dto.CandidateSocials?.Any() == true)
+                    profile.CandidateSocials = dto.CandidateSocials.Select(s => _mapper.Map<CandidateSocial>(s)).ToList();
+
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return _mapper.Map<CandidateProfileDto>(profile);
+            }
+            catch
             {
-                foreach (var expDto in dto.Experiences)
-                {
-                    profile.Experiences.Add(_mapper.Map<Experience>(expDto));
-                }
+                await transaction.RollbackAsync();
+                throw;
             }
-
-            profile.CandidateSkills.Clear();
-            if (dto.CandidateSkills?.Any() == true)
-            {
-                foreach (var skillDto in dto.CandidateSkills)
-                {
-                    profile.CandidateSkills.Add(_mapper.Map<CandidateSkill>(skillDto));
-                }
-            }
-
-            profile.CandidateSocials.Clear();
-            if (dto.CandidateSocials?.Any() == true)
-            {
-                foreach (var socialDto in dto.CandidateSocials)
-                {
-                    profile.CandidateSocials.Add(_mapper.Map<CandidateSocial>(socialDto));
-                }
-            }
-
-            await _context.SaveChangesAsync();
-            return _mapper.Map<CandidateProfileDto>(profile);
         }
         public Task<bool> HasProfileAsync(Guid userId)
         {

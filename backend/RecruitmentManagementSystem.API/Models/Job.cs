@@ -32,5 +32,8 @@ namespace RecruitmentManagementSystem.API.Models
 
         // deadline_date
         public required DateTime DeadlineDate { get; set; }
+
+        // nav prop
+        public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
     }
 }

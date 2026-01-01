@@ -1,310 +1,216 @@
-import React, { useEffect, useState } from "react";
-import api from "../../services/api";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+"use client";
 
-const CandidateProfileUpdate = () => {
+import { useState, useEffect } from "react";
+import LocationSection from "../../components/candidate/updateProfile/LocationSection";
+import EducationSection from "../../components/candidate/updateProfile/EducationSection";
+import ExperienceSection from "../../components/candidate/updateProfile/ExperienceSection";
+import SkillsSection from "../../components/candidate/updateProfile/SkillsSection";
+import SocialSection from "../../components/candidate/updateProfile/SocialSection";
+import { Button } from "@/components/ui/button";
+import api from "../../services/api";
+import { toast } from "sonner";
+
+// ??? also show personal details like mob email dob
+
+// ---- EMPTY STRUCTS ---- //
+const EMPTY_EDUCATION = {
+  instituteName: "",
+  degreeType: "",
+  fieldOfStudy: "",
+  percentageScore: "",
+  startDate: "",
+  endDate: "",
+  isCurrent: false,
+};
+
+const EMPTY_EXPERIENCE = {
+  companyName: "",
+  position: "",
+  startDate: "",
+  endDate: "",
+  isCurrent: false,
+  description: "",
+};
+
+const EMPTY_SKILL = {
+  skillId: "",
+  experienceYears: "",
+  proficiencyLevel: "",
+};
+
+const EMPTY_SOCIAL = {
+  socialPlatformId: "",
+  url: "",
+};
+
+// ---- MAIN COMPONENT ---- //
+export default function CandidateProfileUpdate() {
   const [formData, setFormData] = useState({
     address: "",
     city: "",
     state: "",
     country: "",
     postalCode: "",
-    educations: [
-      {
-        educationId: "",
-        instituteName: "",
-        degreeType: "",
-        fieldOfStudy: "",
-        percentageScore: "",
-        startDate: "",
-        endDate: "",
-        isCurrent: false,
-      },
-    ],
-    experiences: [
-      {
-        experienceId: "",
-        companyName: "",
-        position: "",
-        durationYears: "",
-        startDate: "",
-        endDate: "",
-        isCurrent: false,
-        jobDescription: "",
-      },
-    ],
-    candidateSocials: [
-      {
-        candidateSocialsId: "",
-        socialPlatformId: "",
-        link: "",
-      },
-    ],
-    candidateSkills: [
-      {
-        candidateSkillId: "",
-        skillId: "",
-        experienceYears: "",
-        proficiencyLevel: "",
-      },
-    ],
+    educations: [EMPTY_EDUCATION],
+    experiences: [EMPTY_EXPERIENCE],
+    skills: [EMPTY_SKILL],
+    socialLinks: [EMPTY_SOCIAL],
   });
 
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // -------------------------------------------------------
+  // FETCH CANDIDATE PROFILE ON PAGE LOAD
+  // -------------------------------------------------------
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await api.get("/Candidate/profile");
-        setFormData(res.data);
+        const res = await api.get("Candidate/profile");
+        const data = await res.data;
+
+        console.log("profile update fetch", data);
+
+        setFormData({
+          address: data.address || "",
+          city: data.city || "",
+          state: data.state || "",
+          country: data.country || "",
+          postalCode: data.postalCode || "",
+          educations:
+            data.educations?.length > 0 ? data.educations : [EMPTY_EDUCATION],
+          experiences:
+            data.experiences?.length > 0
+              ? data.experiences
+              : [EMPTY_EXPERIENCE],
+          skills:
+            data.candidateSkills?.length > 0
+              ? data.candidateSkills
+              : [EMPTY_SKILL],
+          socialLinks:
+            data.socialLinks?.length > 0 ? data.socialLinks : [EMPTY_SOCIAL],
+        });
+
+        setLoading(false);
       } catch (err) {
-        console.error("Failed to fetch profile:", err);
+        setError(err.message);
+        setLoading(false);
       }
     };
+
     fetchProfile();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleNestedChange = (section, index, e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      const updated = [...prev[section]];
-      updated[index][name] = value;
-      return { ...prev, [section]: updated };
-    });
-  };
-
+  // -------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await api.patch("/Candidate/profile", formData);
+      // Prepare payload
+      const payload = {
+        address: formData.address || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        country: formData.country || null,
+        postalCode: formData.postalCode || null,
+
+        educations: formData.educations.map((edu) => ({
+          educationId: edu.educationId || 0,
+          instituteName: edu.instituteName || "",
+          degreeType: edu.degreeType || null,
+          fieldOfStudy: edu.fieldOfStudy || null,
+          percentageScore: edu.percentageScore
+            ? parseFloat(edu.percentageScore)
+            : null,
+          startDate: edu.startDate || null,
+          endDate: edu.endDate || null,
+          isCurrent: edu.isCurrent || false,
+        })),
+
+        experiences: formData.experiences.map((exp) => ({
+          experienceId: exp.experienceId || 0,
+          companyName: exp.companyName || "",
+          position: exp.position || "",
+          startDate: exp.startDate || null,
+          endDate: exp.endDate || null,
+          isCurrent: exp.isCurrent || false,
+          description: exp.description || null,
+        })),
+
+        candidateSkills: formData.skills
+          .filter((skill) => skill.skillId && skill.skillId.trim() !== "")
+          .map((skill) => ({
+            skillId: skill.skillId,
+            name: skill.name || null,
+            experienceYears: skill.experienceYears
+              ? parseInt(skill.experienceYears)
+              : 0,
+            proficiencyLevel: skill.proficiencyLevel || null,
+          })),
+
+        socialLinks: formData.socialLinks
+          .filter(
+            (social) =>
+              social.socialPlatformId && social.socialPlatformId.trim() !== ""
+          )
+          .map((social) => ({
+            socialPlatformId: social.socialPlatformId,
+            url: social.url || null,
+          })),
+      };
+
+      console.log("Submitting Payload:", payload);
+
+      // API call
+      await api.put("/Candidate/profile", payload);
       toast.success("Profile updated successfully!");
-      navigate("/candidate/profile");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to update profile");
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      toast.error("Failed to update profile. Check console for details.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (loading) return <p className="p-4">Loading profile...</p>;
+  if (error)
+    return <p className="p-4 text-red-600 font-semibold">Error: {error}</p>;
+
+  // -------------------------------------------------------
+  // UI
+  // -------------------------------------------------------
   return (
-    <div className="flex justify-center py-10">
-      <Card className="w-full max-w-3xl shadow-sm border">
-        <CardHeader>
-          <CardTitle>Update Candidate Profile</CardTitle>
-        </CardHeader>
+    <div className="w-full max-w-5xl mx-auto p-4 space-y-6">
+      <LocationSection formData={formData} setFormData={setFormData} />
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Address</Label>
-                <Textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  rows={2}
-                />
-              </div>
-              <div>
-                <Label>City</Label>
-                <Input
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <Label>State</Label>
-                <Input
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <Label>Country</Label>
-                <Input
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <Label>Postal Code</Label>
-                <Input
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
+      <EducationSection
+        formData={formData}
+        setFormData={setFormData}
+        EMPTY_EDUCATION={EMPTY_EDUCATION}
+      />
 
-            <div>
-              <Label>Education</Label>
-              {formData.educations.map((edu, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-4 border p-3 rounded-md mt-2"
-                >
-                  <Input
-                    name="instituteName"
-                    value={edu.instituteName}
-                    onChange={(e) => handleNestedChange("educations", i, e)}
-                    placeholder="Institute Name"
-                  />
-                  <Input
-                    name="degreeType"
-                    value={edu.degreeType}
-                    onChange={(e) => handleNestedChange("educations", i, e)}
-                    placeholder="Degree Type"
-                  />
-                  <Input
-                    name="fieldOfStudy"
-                    value={edu.fieldOfStudy}
-                    onChange={(e) => handleNestedChange("educations", i, e)}
-                    placeholder="Field of Study"
-                  />
-                  <Input
-                    name="percentageScore"
-                    value={edu.percentageScore}
-                    onChange={(e) => handleNestedChange("educations", i, e)}
-                    placeholder="Score"
-                  />
-                </div>
-              ))}
-            </div>
+      <ExperienceSection
+        formData={formData}
+        setFormData={setFormData}
+        EMPTY_EXPERIENCE={EMPTY_EXPERIENCE}
+      />
 
-            <div>
-              <Label>Experience</Label>
-              {formData.experiences.map((exp, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-4 border p-3 rounded-md mt-2"
-                >
-                  <Input
-                    name="companyName"
-                    value={exp.companyName}
-                    onChange={(e) => handleNestedChange("experiences", i, e)}
-                    placeholder="Company Name"
-                  />
-                  <Input
-                    name="position"
-                    value={exp.position}
-                    onChange={(e) => handleNestedChange("experiences", i, e)}
-                    placeholder="Position"
-                  />
-                  <Textarea
-                    name="jobDescription"
-                    value={exp.jobDescription}
-                    onChange={(e) => handleNestedChange("experiences", i, e)}
-                    placeholder="Job Description"
-                  />
-                </div>
-              ))}
-            </div>
+      <SkillsSection
+        formData={formData}
+        setFormData={setFormData}
+        EMPTY_SKILL={EMPTY_SKILL}
+      />
 
-            <div>
-              <Label>Skills</Label>
-              {formData.candidateSkills.map((skill, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-3 gap-4 border p-3 rounded-md mt-2"
-                >
-                  <Input
-                    name="skillId"
-                    value={skill.skillId}
-                    onChange={(e) =>
-                      handleNestedChange("candidateSkills", i, e)
-                    }
-                    placeholder="Skill ID"
-                  />
-                  <Input
-                    name="experienceYears"
-                    value={skill.experienceYears}
-                    onChange={(e) =>
-                      handleNestedChange("candidateSkills", i, e)
-                    }
-                    placeholder="Years"
-                  />
-                  <Input
-                    name="proficiencyLevel"
-                    value={skill.proficiencyLevel}
-                    onChange={(e) =>
-                      handleNestedChange("candidateSkills", i, e)
-                    }
-                    placeholder="Proficiency Level"
-                  />
-                </div>
-              ))}
-            </div>
+      <SocialSection
+        formData={formData}
+        setFormData={setFormData}
+        EMPTY_SOCIAL={EMPTY_SOCIAL}
+      />
 
-            <div>
-              <Label>Social Links</Label>
-              {formData.candidateSocials.map((social, i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-2 gap-4 border p-3 rounded-md mt-2"
-                >
-                  <Input
-                    name="socialPlatformId"
-                    value={social.socialPlatformId}
-                    onChange={(e) =>
-                      handleNestedChange("candidateSocials", i, e)
-                    }
-                    placeholder="Platform ID"
-                  />
-                  <Input
-                    name="link"
-                    value={social.link}
-                    onChange={(e) =>
-                      handleNestedChange("candidateSocials", i, e)
-                    }
-                    placeholder="Profile Link"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <CardFooter className="p-0 pt-4 flex gap-3">
-              <Button type="submit" disabled={loading} className="w-full">
-                {loading ? "Updating..." : "Update Profile"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={loading}
-                className="w-full"
-                onClick={() => navigate("/candidate/profile")}
-              >
-                Cancel
-              </Button>
-            </CardFooter>
-          </form>
-        </CardContent>
-      </Card>
+      <Button className="mt-4 w-full" onClick={handleSubmit}>
+        Save Profile
+      </Button>
     </div>
   );
-};
-
-export default CandidateProfileUpdate;
+}

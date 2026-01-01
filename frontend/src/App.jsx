@@ -26,8 +26,17 @@ import { Toaster } from "sonner";
 import UpdateJob from "./pages/recruiter/UpdateJob";
 import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
 import CandidateProfileUpdate from "./pages/candidate/CandidateProfileUpdate";
+import api from "./services/api";
+import RtCandidateProfile from "./pages/recruiter/OLDRtCandidateProfile";
+import RecruiterCandidateView from "./pages/recruiter/RecruiterCandidateView";
 
 // import NotFoundPage from "./pages/NotFoundPage";
+import { pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 function App() {
   return (
@@ -57,9 +66,9 @@ function App() {
           <Route
             path="/jobs"
             element={
-              <ProtectedRoute>
+              <PublicRoute>
                 <Jobs pageHeading={"Our Jobs"} />
-              </ProtectedRoute>
+              </PublicRoute>
             }
           />
 
@@ -85,6 +94,9 @@ function App() {
             <Route path="dashboard" element={<CandidateDashboard />} />
             <Route path="profile" element={<CandidateProfile />} />
             <Route path="profile/update" element={<CandidateProfileUpdate />} />
+            {/* jobsssssss */}
+            <Route path="jobs" element={<Jobs pageHeading={"Jobs"} />} />
+            <Route path="jobs/:jobId" element={<JobDetail />} />
             {/* <Route path="applied-jobs" element={<AppliedJobs />} /> */}
           </Route>
 
@@ -99,8 +111,16 @@ function App() {
           >
             <Route path="dashboard" element={<RecruiterDashboard />} />
             <Route path="jobs" element={<Jobs pageHeading={"Jobs"} />} />
+            <Route path="jobs/:jobId" element={<JobDetail />} />
             <Route path="create-job" element={<CreateJob />} />
             <Route path="update-job/:jobId" element={<UpdateJob />} />
+
+            {/* for candidate */}
+            <Route
+              path="applications/:applicationId"
+              // element={<RtCandidateProfile />}
+              element={<RecruiterCandidateView />}
+            />
           </Route>
 
           {/* errors */}

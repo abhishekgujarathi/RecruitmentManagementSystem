@@ -6,6 +6,9 @@ using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.Services;
 using Scalar.AspNetCore;
 using System.Text;
+using RecruitmentManagementSystem.API.Services.Candidate;
+using RecruitmentManagementSystem.API.Services.Jobs;
+using System.Security.Claims;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,7 @@ builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("AllowFrontend", policy =>
     {
+        //policy.WithOrigins("http://localhost:5173"),
         policy.WithOrigins("http://localhost:5173")
         .AllowAnyHeader()
         .AllowAnyMethod();
@@ -50,7 +54,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
             ValidAudience = builder.Configuration["AppSettings:Audience"],
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"]!)),
+            RoleClaimType = ClaimTypes.Role //added so unlogged users access anonymous links, [jobsController]
         };
     });
 
@@ -58,6 +63,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRecruitersService, RecruitersService>();
 builder.Services.AddScoped<ICandidateService, CandidateService>();
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddScoped<IJobsService, JobsService>();
+builder.Services.AddScoped<ISkillsService, SkillsService>();
+builder.Services.AddScoped<IReviewersService, ReviewersService>();
+
+
 
 
 
@@ -73,13 +84,14 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-    
+
 
 app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+app.UseAuthentication(); 
+app.UseAuthorization(); 
 
 app.MapControllers();
 

@@ -8,7 +8,8 @@ const CandidateSideNav = () => {
     { title: "Profile", path: "/candidate/profile" },
     { title: "Update Profile", path: "/candidate/profile/update" },
     // ??? { title: "Applied Jobs", path: "/candidate/applied-jobs" },
-    { title: "Jobs", path: "/jobs" },
+    // { title: "Jobs", path: "/jobs" },
+    { title: "Jobs", path: "/candidate/jobs" },
   ];
 
   return (

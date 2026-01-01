@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using RecruitmentManagementSystem.API.DTOS;
+using System.Collections;
 using System.ComponentModel.DataAnnotations;
 
 public class CandidateProfileDto
@@ -14,12 +14,25 @@ public class CandidateProfileDto
     [StringLength(6)]
     public string? PostalCode { get; set; }
 
+    public required UserDetailsDto UserDetails { get; set; } = default!;
     public ICollection<CandidateSocialDto>? CandidateSocials { get; set; }
     public ICollection<EducationDto>? Educations { get; set; }
     public ICollection<ExperienceDto>? Experiences { get; set; }
     public ICollection<CandidateSkillDto>? CandidateSkills { get; set; }
     public ICollection<CVStorageDto>? CVStorages { get; set; }
 }
+
+
+public class UserDetailsDto {
+    public required string Fname { get; set; }
+    public required string Lname { get; set; }
+    public required string Email { get; set; }
+    public required string MobileNumber { get; set; }
+    public DateTime? DOB { get; set; }
+    public string? Gender { get; set; }
+
+}
+
 
 public class EducationDto
 {
@@ -49,16 +62,19 @@ public class CandidateSocialDto
 {
     public Guid CandidateSocialsId { get; set; }
     public Guid SocialPlatformId { get; set; }
+    public string? Name { get; set; }
     public string Link { get; set; } = default!;
 }
 
 public class CandidateSkillDto
 {
-    public Guid CandidateSkillId { get; set; }
-    public Guid SkillId { get; set; }
+    public Guid? CandidateSkillId { get; set; }
+    public Guid? SkillId { get; set; }
+    public string? Name { get; set; }
     public decimal? ExperienceYears { get; set; }
     public string? ProficiencyLevel { get; set; }
 }
+
 
 public class CVStorageDto
 {

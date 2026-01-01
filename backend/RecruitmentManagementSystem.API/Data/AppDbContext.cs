@@ -27,6 +27,8 @@ namespace RecruitmentManagementSystem.API.Data
         public DbSet<CVStorage> CVStorages { get; set; }
         public DbSet<JobApplication> JobApplications { get; set; }
         // --- candidate ---
+        public DbSet<AssignedReviewer> AssignedReviewers { get; set; }
+        public DbSet<CVReviewStage> CVReviewStages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,9 +36,9 @@ namespace RecruitmentManagementSystem.API.Data
 
 
             // --- user --
-            var adminRoleId = Guid.NewGuid();
-            var recruiterRoleId = Guid.NewGuid();
-            var candidateRoleId = Guid.NewGuid();
+            var adminRoleId = Guid.Parse("b57751e8-24af-473b-a7aa-ff30ddfc0d49");
+            var recruiterRoleId = Guid.Parse("66a24f39-2e0a-46fd-81b5-13d6bddb8c5c");
+            var candidateRoleId = Guid.Parse("c016dbd1-11c4-444b-8b3e-84095706fc60");
 
             modelBuilder.Entity<UserRole>().HasData(
                 new UserRole { UserRoleId = adminRoleId, RoleName = "Admin", active = true },
@@ -394,6 +396,40 @@ namespace RecruitmentManagementSystem.API.Data
                 }
             );
             // --- jobs ---
+
+            // AssignedReviewer -> Reviewer (User)
+            modelBuilder.Entity<AssignedReviewer>()
+                .HasOne(ar => ar.Reviewer)
+                .WithMany()
+                .HasForeignKey(ar => ar.Uid)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // CVReviewStage -> Reviewer (User)
+            modelBuilder.Entity<CVReviewStage>()
+                .HasOne(c => c.Reviewer)
+                .WithMany()
+                .HasForeignKey(c => c.ReviewedByUid)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<CVReviewStage>(entity =>
+            {
+                entity.HasKey(c => c.CVReviewStageSid);
+
+                //entity.HasOne(c => c.JobApplication)
+                //      .WithMany(j => j.CVReviewStages)
+                //      .HasForeignKey(c => c.JobApplicationId)
+                //      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Reviewer)
+                      .WithMany() // or WithMany(r => r.CVReviewStages) if needed
+                      .HasForeignKey(c => c.ReviewedByUid)
+                      .OnDelete(DeleteBehavior.NoAction); // <-- important fix
+
+                //entity.HasOne(c => c.AssignedReviewer)
+                //      .WithMany()
+                //      .HasForeignKey(c => c.AssignedReviewersId)
+                //      .OnDelete(DeleteBehavior.NoAction); // <-- prevents multi-path cascade
+            });
 
         }
     }

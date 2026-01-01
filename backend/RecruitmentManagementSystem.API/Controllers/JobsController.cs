@@ -1,49 +1,36 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RecruitmentManagementSystem.API.Data;
-using RecruitmentManagementSystem.API.DTOS.Response;
-
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using RecruitmentManagementSystem.API.Common;
+using RecruitmentManagementSystem.API.Models;
+using RecruitmentManagementSystem.API.Services.Jobs;
+using System.Security.Claims;
 namespace RecruitmentManagementSystem.API.Controllers
 {
-
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class JobsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IJobsService _jobsService;
 
-        public JobsController(AppDbContext context)
+        public JobsController(IJobsService jobsService)
         {
-            _context = context;
+            _jobsService = jobsService;
         }
 
         [HttpGet]
         public async Task<ActionResult> GetJobsAsync()
         {
-            var jobs = await _context.Jobs
-                .Include(job => job.JobDescription)
-                .ThenInclude(jd => jd.JobType)
-                .Include(jod => jod.CreatedByUser)
-                .Select(job => new JobResponseDto()
-                {
-                    JobId = job.JobId,
-                    OpeningsCount = job.OpeningsCount,
-                    CreatedDate = job.CreatedDate,
-                    DeadlineDate = job.DeadlineDate,
-                    JobDescription = new JobDescriptionDto
-                    {
-                        JobDescriptionId = job.JobDescription.JobDescriptionId,
-                        Title = job.JobDescription.Title,
-                        Details = job.JobDescription.Details,
-                        Location = job.JobDescription.Location,
-                        MinimumExperienceReq = job.JobDescription.MinimumExperienceReq,
-                        JobType = job.JobDescription.JobType.TypeName,
-                        Responsibilities = job.JobDescription.Responsibilty
 
-                    },
-                    CreatedByUserId = job.CreatedByUserId
-                })
-                .ToListAsync();
+            var userRoleType = UserExtensions.GetUserRoleType(User);
+
+
+            var userIdClaims = User.FindFirst(ClaimTypes.NameIdentifier);
+            Guid.TryParse(userIdClaims?.Value, out Guid userId);
+
+
+            var jobs = await _jobsService.GetJobsAsync(userId, userRoleType);
+
 
             return Ok(jobs);
         }
@@ -51,35 +38,18 @@ namespace RecruitmentManagementSystem.API.Controllers
         [HttpGet("{jobID}")]
         public async Task<ActionResult> GetJobAsync([FromRoute] Guid jobID)
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            // parsing string to guid
+            Guid.TryParse(userIdClaim?.Value, out Guid userId);
 
-            var job = await _context.Jobs
-                .Include(job => job.JobDescription)
-                .ThenInclude(jd => jd.JobType)
-                .Include(jod => jod.CreatedByUser)
-                .Where(job => job.JobId == jobID)
-                .Select(job => new JobResponseDto()
-                {
-                    JobId = job.JobId,
-                    OpeningsCount = job.OpeningsCount,
-                    CreatedDate = job.CreatedDate,
-                    DeadlineDate = job.DeadlineDate,
-                    JobDescription = new JobDescriptionDto
-                    {
-                        JobDescriptionId = job.JobDescription.JobDescriptionId,
-                        Title = job.JobDescription.Title,
-                        Details = job.JobDescription.Details,
-                        Location = job.JobDescription.Location,
-                        MinimumExperienceReq = job.JobDescription.MinimumExperienceReq,
-                        JobType = job.JobDescription.JobType.TypeName,
-                        Responsibilities = job.JobDescription.Responsibilty
-                    },
-                    CreatedByUserId = job.CreatedByUserId
-                })
-                .FirstOrDefaultAsync();
+            var userRoleType = UserExtensions.GetUserRoleType(User);
+
+
+            var job = await _jobsService.GetJobAsync(jobID,userId,userRoleType);
 
             if (job is null)
             {
-                return BadRequest("Invalid job id");
+                return NotFound("Invalid job id");
             }
 
 

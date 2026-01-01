@@ -23,6 +23,7 @@ const JobApplicantsList = () => {
           `/Recruiters/jobs/${jobId}/applications`
         );
         setApplicants(response.data);
+        console.log("applicants list -", response.data);
       } catch (error) {
         console.error("Failed to fetch applicants:", error);
       } finally {
@@ -43,7 +44,7 @@ const JobApplicantsList = () => {
 
   return (
     <section>
-      <div className="container px-0 md:px-8">
+      <div className="container px-0 md:px-4">
         <div className="flex flex-col">
           <div className="flex items-center gap-3 mb-6">
             <h1 className="text-2xl font-semibold">Applicants</h1>
@@ -56,8 +57,8 @@ const JobApplicantsList = () => {
           ) : (
             applicants.map((applicant) => (
               <React.Fragment key={applicant.jobApplicationId}>
-                <div className="grid items-center gap-4 px-4 py-5 md:grid-cols-4">
-                  <div className="flex flex-col gap-1">
+                <div className="grid items-center gap-4 px-4 py-5 md:grid-cols-6">
+                  <div className="col-span-2 flex flex-col gap-1">
                     <h2 className="font-semibold text-lg">
                       {applicant.candidateName}
                     </h2>
@@ -74,6 +75,13 @@ const JobApplicantsList = () => {
                   <p className="text-sm font-medium capitalize">
                     Status: {applicant.currentStatus}
                   </p>
+                  <Button asChild>
+                    <a
+                      href={`/recruiter/applications/${applicant.applicationId}`}
+                    >
+                      View Profile
+                    </a>
+                  </Button>
                 </div>
                 <Separator />
               </React.Fragment>

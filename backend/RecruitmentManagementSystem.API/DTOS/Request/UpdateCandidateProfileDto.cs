@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace RecruitmentManagementSystem.API.Dtos
+namespace RecruitmentManagementSystem.API.DTOS
 {
     public class UpdateCandidateProfileDto
     {
@@ -21,7 +21,7 @@ namespace RecruitmentManagementSystem.API.Dtos
     public class UpdateEducationDto
     {
         [Required]
-        public Guid EducationId { get; set; }  // Needed for identifying existing record
+        // public Guid EducationId { get; set; }  // Needed for identifying existing record
 
         public string? InstituteName { get; set; }
         public string? DegreeType { get; set; }
@@ -35,7 +35,7 @@ namespace RecruitmentManagementSystem.API.Dtos
     public class UpdateExperienceDto
     {
         [Required]
-        public Guid ExperienceId { get; set; }
+        // public Guid ExperienceId { get; set; }
 
         public string? CompanyName { get; set; }
         public string? Position { get; set; }
@@ -49,7 +49,7 @@ namespace RecruitmentManagementSystem.API.Dtos
     public class UpdateCandidateSocialDto
     {
         [Required]
-        public Guid CandidateSocialsId { get; set; }
+        // public Guid CandidateSocialsId { get; set; }
 
         public Guid? SocialPlatformId { get; set; }
         public string? Link { get; set; }
@@ -58,7 +58,7 @@ namespace RecruitmentManagementSystem.API.Dtos
     public class UpdateCandidateSkillDto
     {
         [Required]
-        public Guid CandidateSkillId { get; set; }
+        // public Guid CandidateSkillId { get; set; }
 
         public Guid? SkillId { get; set; }
         public decimal? ExperienceYears { get; set; }

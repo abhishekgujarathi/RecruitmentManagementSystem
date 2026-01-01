@@ -27,15 +27,15 @@ const Navbar = ({
 
   // nav links
   const menu = [
-    {
-      title: "DashBoard",
-      url: !!authState?.token
-        ? authState.role === "Candidate"
-          ? "/candidate/dashboard"
-          : "/recruiter/dashboard"
-        : "/login",
-    },
-    { title: "Jobs", url: "/jobs" },
+    // {
+    //   title: "DashBoard",
+    //   url: !!authState?.token
+    //     ? authState.role === "Candidate"
+    //       ? "/candidate/dashboard"
+    //       : "/recruiter/dashboard"
+    //     : "/login",
+    // },
+    // { title: "Jobs", url: "/jobs" },
     // { title: "Resources", url: "/resources" },
     // { title: "Pricing", url: "/pricing" },
     // { title: "Blog", url: "/blog" },
@@ -59,7 +59,10 @@ const Navbar = ({
   };
 
   return (
-    <section className="py-4 border-b sticky top-0">
+    <section
+      className="py-4 border-b sticky top-0 bg-white
+    "
+    >
       <div className="container mx-auto px-4">
         <nav className="hidden lg:flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">

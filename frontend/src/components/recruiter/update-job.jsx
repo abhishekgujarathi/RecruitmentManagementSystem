@@ -70,7 +70,7 @@ const UpdateJobForm = () => {
         responsibilities: formData.responsibilities?.trim() || null,
       });
       toast.success("Job updated successfully!");
-      navigate("/recruiter/jobs");
+      navigate(`/recruiter/jobs/${jobId}`);
     } catch (error) {
       console.error("Failed to update job:", error);
       toast.error(error.response?.data?.message || "Failed to update job");
@@ -190,7 +190,7 @@ const UpdateJobForm = () => {
                 variant="outline"
                 disabled={loading}
                 className="w-full"
-                onClick={() => navigate(`/jobs/${jobId}`)}
+                onClick={() => navigate(`/recruiter/jobs/${jobId}`)}
               >
                 Cancel
               </Button>
