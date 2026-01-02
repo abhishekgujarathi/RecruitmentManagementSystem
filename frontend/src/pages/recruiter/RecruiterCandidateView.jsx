@@ -70,9 +70,8 @@ const RecruiterCandidateView = () => {
   const getReviewerList = async () => {
     // fetching list of reviweres
     try {
-      const res = await api.get("/Reviewers");
+      const res = await api.get(`/Reviewers/`, { params: applicationId });
       setReviewers(res.data);
-      console.log(reviewers);
     } catch (err) {
       console.error("Failed to fetch profile:", err);
     } finally {
@@ -85,13 +84,9 @@ const RecruiterCandidateView = () => {
 
   useEffect(() => {
     getApplicationSummary();
-    console.log(applicationSummary);
     getCV();
-    console.log(pdfFile);
     getApplicationReviewers();
-    console.log("rev -", reviewers);
     getReviewerList();
-    console.log("revlist -", reviewers);
   }, []);
 
   const assignReviewer = async () => {
@@ -105,6 +100,9 @@ const RecruiterCandidateView = () => {
     );
 
     if (res.status == 200) {
+      getApplicationReviewers();
+      setReviewers([]);
+      getReviewerList();
       alert("Reviewer Added");
     }
   };
@@ -115,8 +113,8 @@ const RecruiterCandidateView = () => {
     return <div className="text-center py-10">Profile not found</div>;
 
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <Card className="rounded-2xl shadow-sm">
+    <div className="w-full mx-auto">
+      <Card className="shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">
@@ -146,7 +144,7 @@ const RecruiterCandidateView = () => {
       {/* reviewers card here */}
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Candidate Review</CardTitle>
+          <CardTitle>Resume & Reviewers</CardTitle>
         </CardHeader>
 
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -157,7 +155,7 @@ const RecruiterCandidateView = () => {
               <Page
                 key={`page_`}
                 pageNumber={1}
-                scale={0.4}
+                scale={0.7}
                 devicePixelRatio={window.devicePixelRatio || 1}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
@@ -193,9 +191,14 @@ const RecruiterCandidateView = () => {
                           Status: {r.status}
                         </p>
                       </div>
-                      <span className="text-xs">
-                        {r.reviewedOn ?? "Pending"}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs">
+                          Assigned On: {formatDate(r.assignedDate) ?? "error"}
+                        </span>
+                        <span className="text-xs">
+                          Reviewed On: {formatDate(r.reviewedOn) ?? "Pending"}
+                        </span>
+                      </div>
                     </li>
                   ))}
               </ul>
@@ -226,6 +229,15 @@ const RecruiterCandidateView = () => {
             </div>
           </div>
         </CardContent>
+      </Card>
+
+      {/* reviews by reviewer */}
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Reviewes</CardTitle>
+        </CardHeader>
+
+        <CardContent></CardContent>
       </Card>
     </div>
   );

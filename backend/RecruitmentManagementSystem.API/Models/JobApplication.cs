@@ -20,5 +20,8 @@ namespace RecruitmentManagementSystem.API.Models
 
         [MaxLength(50)]
         public string? CurrentStatus { get; set; } = "Pending";
+
+        public ICollection<AssignedReviewer> AssignedReviewers { get; set; } = new List<AssignedReviewer>();
+
     }
 }

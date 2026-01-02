@@ -27,8 +27,12 @@ namespace RecruitmentManagementSystem.API.Data
         public DbSet<CVStorage> CVStorages { get; set; }
         public DbSet<JobApplication> JobApplications { get; set; }
         // --- candidate ---
+
+
+        // --- review ---
         public DbSet<AssignedReviewer> AssignedReviewers { get; set; }
         public DbSet<CVReviewStage> CVReviewStages { get; set; }
+        // --- review ---
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -39,11 +43,15 @@ namespace RecruitmentManagementSystem.API.Data
             var adminRoleId = Guid.Parse("b57751e8-24af-473b-a7aa-ff30ddfc0d49");
             var recruiterRoleId = Guid.Parse("66a24f39-2e0a-46fd-81b5-13d6bddb8c5c");
             var candidateRoleId = Guid.Parse("c016dbd1-11c4-444b-8b3e-84095706fc60");
-
+            var reviewerRoleId = Guid.Parse("c016dbd1-11c4-444b-8b3e-84095706fc65");
+            var interviewerRoleId = Guid.Parse("c016dbd1-11c4-444b-8b3e-84095706fc66");
+            
             modelBuilder.Entity<UserRole>().HasData(
                 new UserRole { UserRoleId = adminRoleId, RoleName = "Admin", active = true },
                 new UserRole { UserRoleId = recruiterRoleId, RoleName = "Recruiter", active = true },
-                new UserRole { UserRoleId = candidateRoleId, RoleName = "Candidate", active = true }
+                new UserRole { UserRoleId = candidateRoleId, RoleName = "Candidate", active = true },
+                new UserRole { UserRoleId = reviewerRoleId, RoleName = "Reviewer", active = true },
+                new UserRole { UserRoleId = interviewerRoleId, RoleName = "Interviewer", active = true }
             );
 
             modelBuilder.Entity<User>(entity =>
@@ -111,7 +119,50 @@ namespace RecruitmentManagementSystem.API.Data
             };
             candidate.PasswordHash = passwordHasher.HashPassword(candidate, "1234567890");
 
-            modelBuilder.Entity<User>().HasData(adminUser, recruiterUser, candidate);
+            
+
+            var reviewerUserId = Guid.Parse("7c6a8f5b-9b2e-4e4a-a1a1-111111111111");
+            var reviewerUser = new User
+            {
+                UserId = reviewerUserId,
+                Fname = "Bruce",
+                Lname = "Wayne",
+                Email = "reviewer@exp.com",
+                MobileNumber = "2222222222",
+                CreatedDate = DateTime.UtcNow,
+                DOB = new DateTime(1992, 3, 15),
+                Gender = "Male",
+                IsActive = true,
+                UserRoleId = reviewerRoleId 
+            };
+            reviewerUser.PasswordHash = passwordHasher.HashPassword(reviewerUser, "1234567890");
+
+            var interviewerUserId = Guid.Parse("8d7b9a6c-4c3f-4b5d-b2b2-222222222222");
+            var interviewerUser = new User
+            {
+                UserId = interviewerUserId,
+                Fname = "Tony",
+                Lname = "Stark",
+                Email = "interviewer@exp.com",
+                MobileNumber = "3333333333",
+                CreatedDate = DateTime.UtcNow,
+                DOB = new DateTime(1988, 5, 29),
+                Gender = "Male",
+                IsActive = true,
+                UserRoleId = interviewerRoleId
+            };
+            interviewerUser.PasswordHash = passwordHasher.HashPassword(interviewerUser, "1234567890");
+
+            modelBuilder.Entity<User>().HasData(
+                adminUser, 
+                recruiterUser, 
+                candidate
+            );
+            modelBuilder.Entity<User>().HasData(
+                reviewerUser,
+                interviewerUser
+            );
+
             // --- user ---
 
 
@@ -415,20 +466,14 @@ namespace RecruitmentManagementSystem.API.Data
             {
                 entity.HasKey(c => c.CVReviewStageSid);
 
-                //entity.HasOne(c => c.JobApplication)
-                //      .WithMany(j => j.CVReviewStages)
-                //      .HasForeignKey(c => c.JobApplicationId)
-                //      .OnDelete(DeleteBehavior.Cascade);
+               
 
                 entity.HasOne(c => c.Reviewer)
-                      .WithMany() // or WithMany(r => r.CVReviewStages) if needed
+                      .WithMany() 
                       .HasForeignKey(c => c.ReviewedByUid)
-                      .OnDelete(DeleteBehavior.NoAction); // <-- important fix
+                      .OnDelete(DeleteBehavior.NoAction);
 
-                //entity.HasOne(c => c.AssignedReviewer)
-                //      .WithMany()
-                //      .HasForeignKey(c => c.AssignedReviewersId)
-                //      .OnDelete(DeleteBehavior.NoAction); // <-- prevents multi-path cascade
+              
             });
 
         }

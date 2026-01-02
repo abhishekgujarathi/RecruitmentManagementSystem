@@ -32,6 +32,8 @@ import RecruiterCandidateView from "./pages/recruiter/RecruiterCandidateView";
 
 // import NotFoundPage from "./pages/NotFoundPage";
 import { pdfjs } from "react-pdf";
+import ReviewerSideNav from "./components/reviewer/side-nav";
+import AssignedApplications from "./pages/reviewer/AssignedApplications";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -115,12 +117,25 @@ function App() {
             <Route path="create-job" element={<CreateJob />} />
             <Route path="update-job/:jobId" element={<UpdateJob />} />
 
-            {/* for candidate */}
+            {/* for application */}
             <Route
               path="applications/:applicationId"
               // element={<RtCandidateProfile />}
               element={<RecruiterCandidateView />}
             />
+          </Route>
+
+          {/* reviewer routee */}
+          <Route
+            path="/reviewer"
+            element={
+              <ProtectedRoute requiredRole="reviewer">
+                <DashboardLayout leftContent={<ReviewerSideNav />} />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<>hlo</>} />
+            <Route path="applications" element={<AssignedApplications />} />
           </Route>
 
           {/* errors */}

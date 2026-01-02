@@ -65,7 +65,10 @@ const Navbar = ({
     >
       <div className="container mx-auto px-4">
         <nav className="hidden lg:flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
+          <a
+            href={`/${authState.role?.toLowerCase()}/dashboard`}
+            className="flex items-center gap-2"
+          >
             <span className="text-lg font-semibold tracking-tight">
               {logo.title}
             </span>

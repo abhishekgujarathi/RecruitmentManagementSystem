@@ -124,13 +124,13 @@ namespace RecruitmentManagementSystem.API.Services
                 return false;
             }
 
-            // Check if the recruiter owns this job
+            // check if the recruiter owns this job
             if (job.CreatedByUserId != recruiterId)
             {
                 throw new UnauthorizedAccessException("You can only delete your own jobs");
             }
 
-            // Delete JobDescription first (if not used by other jobs)
+            // delete JobDescription first (if not used by other jobs)
             var isJobDescUsedElsewhere = await _context.Jobs
                 .AnyAsync(j => j.JobDescriptionId == job.JobDescriptionId && j.JobId != jobId);
 
@@ -157,13 +157,13 @@ namespace RecruitmentManagementSystem.API.Services
                 return null;
             }
 
-            // Check if the recruiter owns this job
+            // check if the recruiter owns this job
             if (job.CreatedByUserId != recruiterId)
             {
                 throw new UnauthorizedAccessException("You can only update your own jobs");
             }
 
-            // Update JobDescription fields (only if provided)
+            // update JobDescription fields
             if (!string.IsNullOrWhiteSpace(request.Title))
                 job.JobDescription.Title = request.Title;
 
@@ -179,7 +179,7 @@ namespace RecruitmentManagementSystem.API.Services
             if (request.MinimumExperienceReq.HasValue)
                 job.JobDescription.MinimumExperienceReq = request.MinimumExperienceReq.Value;
 
-            // Update JobType if provided
+            // update JobType if provided
             if (!string.IsNullOrWhiteSpace(request.TypeName))
             {
                 var jobType = await _context.JobTypes
@@ -187,13 +187,13 @@ namespace RecruitmentManagementSystem.API.Services
 
                 if (jobType == null)
                 {
-                    return null; // Invalid job type
+                    return null; 
                 }
 
                 job.JobDescription.JobTypeId = jobType.JobTypeId;
             }
 
-            // Update Job fields (only if provided)
+            // update Job fields 
             if (request.OpeningsCount.HasValue)
                 job.OpeningsCount = request.OpeningsCount.Value;
 
@@ -204,7 +204,7 @@ namespace RecruitmentManagementSystem.API.Services
 
             await _context.SaveChangesAsync();
 
-            // Reload to get the updated JobType
+            // reload to get the updated JobType
             await _context.Entry(job.JobDescription).Reference(jd => jd.JobType).LoadAsync();
 
             return MapToResponseDto(job);
