@@ -8,8 +8,15 @@ namespace RecruitmentManagementSystem.API.Data
     {
         // --- users ---
         public DbSet<User> Users { get; set; }
-        public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<UserType> UserTypes { get; set; }
+
+
         // --- users ---
+
+        // --- employye ---
+        public DbSet<EmployeeRole> EmployeeRoles { get; set; }
+        public DbSet<EmployeeUserRole> EmployeeUserRoles { get; set; }
+        // --- employye ---
 
         public DbSet<JobType> JobTypes { get; set; }
         public DbSet<JobDescription> JobDescriptions { get; set; }
@@ -40,19 +47,30 @@ namespace RecruitmentManagementSystem.API.Data
 
 
             // --- user --
-            var adminRoleId = Guid.Parse("b57751e8-24af-473b-a7aa-ff30ddfc0d49");
-            var recruiterRoleId = Guid.Parse("66a24f39-2e0a-46fd-81b5-13d6bddb8c5c");
-            var candidateRoleId = Guid.Parse("c016dbd1-11c4-444b-8b3e-84095706fc60");
-            var reviewerRoleId = Guid.Parse("c016dbd1-11c4-444b-8b3e-84095706fc65");
-            var interviewerRoleId = Guid.Parse("c016dbd1-11c4-444b-8b3e-84095706fc66");
-            
-            modelBuilder.Entity<UserRole>().HasData(
-                new UserRole { UserRoleId = adminRoleId, RoleName = "Admin", active = true },
-                new UserRole { UserRoleId = recruiterRoleId, RoleName = "Recruiter", active = true },
-                new UserRole { UserRoleId = candidateRoleId, RoleName = "Candidate", active = true },
-                new UserRole { UserRoleId = reviewerRoleId, RoleName = "Reviewer", active = true },
-                new UserRole { UserRoleId = interviewerRoleId, RoleName = "Interviewer", active = true }
+
+            var candidateTypeId = Guid.Parse("E91D74B9-67CB-41B5-9581-338A64A45122");
+            var employeeTypeId = Guid.Parse("3B5143AA-62F9-49B8-BA06-3AE28505528E");
+
+            modelBuilder.Entity<UserType>().HasData(
+                new UserType { UserTypeId = candidateTypeId, TypeName = "Candidate", active = true },
+                new UserType { UserTypeId = employeeTypeId, TypeName = "Employee", active = true }
             );
+
+
+
+            // -- employ roles --- 
+            var recruiterRoleId = Guid.Parse("A12961CE-53D2-4294-99CB-B7916DBCEC24");
+            var reviewerRoleId = Guid.Parse("9C0D0137-9B2E-47D5-8DAC-8BC00BFD6E49");
+            var interviewerRoleId = Guid.Parse("041C97A7-8CB7-4476-B7B3-5FF64BBBA57F");
+
+            modelBuilder.Entity<EmployeeRole>().HasData(
+                new EmployeeRole { EmployeeRoleId = recruiterRoleId, RoleName = "Recruiter", IsActive = true },
+                new EmployeeRole { EmployeeRoleId = reviewerRoleId, RoleName = "Reviewer", IsActive = true },
+                new EmployeeRole { EmployeeRoleId = interviewerRoleId, RoleName = "Interviewer", IsActive = true }
+            );
+
+            // -- employ roles --- 
+
 
             modelBuilder.Entity<User>(entity =>
             {
@@ -63,10 +81,11 @@ namespace RecruitmentManagementSystem.API.Data
                     .HasForeignKey<CandidateProfile>(cp => cp.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(u => u.UserRole)
-                    .WithMany(ur => ur.Users)
-                    .HasForeignKey(u => u.UserRoleId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(u => u.UserType)
+                  .WithMany(ut => ut.Users)
+                  .HasForeignKey(u => u.UserTypeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
 
                 entity.HasIndex(e => e.Email).IsUnique();
             });
@@ -84,7 +103,7 @@ namespace RecruitmentManagementSystem.API.Data
                 DOB = new DateTime(1990, 1, 1),
                 Gender = "Male",
                 IsActive = true,
-                UserRoleId = adminRoleId
+                UserTypeId = employeeTypeId
             };
             adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "1234567890");
 
@@ -99,7 +118,7 @@ namespace RecruitmentManagementSystem.API.Data
                 DOB = new DateTime(1995, 5, 10),
                 Gender = "Male",
                 IsActive = true,
-                UserRoleId = recruiterRoleId
+                UserTypeId = employeeTypeId
             };
             recruiterUser.PasswordHash = passwordHasher.HashPassword(recruiterUser, "1234567890");
 
@@ -115,11 +134,11 @@ namespace RecruitmentManagementSystem.API.Data
                 DOB = new DateTime(1998, 8, 25),
                 Gender = "Male",
                 IsActive = true,
-                UserRoleId = candidateRoleId
+                UserTypeId = candidateTypeId
             };
             candidate.PasswordHash = passwordHasher.HashPassword(candidate, "1234567890");
 
-            
+
 
             var reviewerUserId = Guid.Parse("7c6a8f5b-9b2e-4e4a-a1a1-111111111111");
             var reviewerUser = new User
@@ -133,7 +152,7 @@ namespace RecruitmentManagementSystem.API.Data
                 DOB = new DateTime(1992, 3, 15),
                 Gender = "Male",
                 IsActive = true,
-                UserRoleId = reviewerRoleId 
+                UserTypeId = employeeTypeId
             };
             reviewerUser.PasswordHash = passwordHasher.HashPassword(reviewerUser, "1234567890");
 
@@ -149,19 +168,64 @@ namespace RecruitmentManagementSystem.API.Data
                 DOB = new DateTime(1988, 5, 29),
                 Gender = "Male",
                 IsActive = true,
-                UserRoleId = interviewerRoleId
+                UserTypeId = employeeTypeId
             };
             interviewerUser.PasswordHash = passwordHasher.HashPassword(interviewerUser, "1234567890");
 
             modelBuilder.Entity<User>().HasData(
-                adminUser, 
-                recruiterUser, 
+                adminUser,
+                recruiterUser,
                 candidate
             );
             modelBuilder.Entity<User>().HasData(
                 reviewerUser,
                 interviewerUser
             );
+
+            // --- assigninroles to m-t-m --- 
+
+            // definnin composite key due to m-t-m
+            modelBuilder.Entity<EmployeeUserRole>()
+                .HasKey(eur => new { eur.UserId, eur.EmployeeRoleId });
+
+
+            modelBuilder.Entity<EmployeeUserRole>()
+                .HasOne(eur => eur.User) //every employe userrole has one user
+                .WithMany(u => u.EmployeeUserRoles)
+                .HasForeignKey(eur => eur.UserId);
+
+            modelBuilder.Entity<EmployeeUserRole>()
+                .HasOne(eur => eur.EmployeeRole)
+                .WithMany(er => er.EmployeeUserRoles)
+                .HasForeignKey(eur => eur.EmployeeRoleId);
+
+            // --- assigninroles to m-t-m --- 
+
+
+            // --- adding roles to users ---
+            modelBuilder.Entity<EmployeeUserRole>().HasData(
+                new EmployeeUserRole
+                {
+                    UserId = recruiterUser.UserId,
+                    EmployeeRoleId = recruiterRoleId,
+                    AssignedOn = DateTime.UtcNow
+                },
+                new EmployeeUserRole
+                {
+                    UserId = reviewerUser.UserId,
+                    EmployeeRoleId = reviewerRoleId,
+                    AssignedOn = DateTime.UtcNow
+                },
+                new EmployeeUserRole
+                {
+                    UserId = interviewerUser.UserId,
+                    EmployeeRoleId = interviewerRoleId,
+                    AssignedOn = DateTime.UtcNow
+                }
+            );
+
+            // --- adding roles to users ---
+
 
             // --- user ---
 
@@ -466,14 +530,14 @@ namespace RecruitmentManagementSystem.API.Data
             {
                 entity.HasKey(c => c.CVReviewStageSid);
 
-               
+
 
                 entity.HasOne(c => c.Reviewer)
-                      .WithMany() 
+                      .WithMany()
                       .HasForeignKey(c => c.ReviewedByUid)
                       .OnDelete(DeleteBehavior.NoAction);
 
-              
+
             });
 
         }

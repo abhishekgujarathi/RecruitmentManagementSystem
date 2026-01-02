@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.DTOS.Response;
+using RecruitmentManagementSystem.API.Models;
 using System.Threading.Tasks;
 
 namespace RecruitmentManagementSystem.API.Services
@@ -32,16 +33,26 @@ namespace RecruitmentManagementSystem.API.Services
                .Select(ar => ar.Uid)
                .ToListAsync();
 
-            return await _context.Users
-                .Where(u => u.IsActive
-                    && u.UserRole.RoleName == "Reviewer"
-                    && !assignedReviewerIds.Contains(u.UserId)
+            var result = await _context.Users
+                .Where(u =>
+                    u.IsActive &&
+                    u.UserType.TypeName == "Employee"
+
+                    // returning all employees
+                    // && u.EmployeeUserRoles.Any(eur =>
+                    //    //eur.EmployeeRole.RoleName == "Reviewer"
+                    //) 
+                    &&
+                    // filltring alredy assigned to the application id
+                    !assignedReviewerIds.Contains(u.UserId)
                 )
                 .Select(u => new KeyValuePair<Guid, string>(
                     u.UserId,
                     u.Fname + " " + u.Lname
                 ))
                 .ToListAsync();
+
+            return result;
         }
 
         // get all applications assigned to the user
@@ -51,7 +62,7 @@ namespace RecruitmentManagementSystem.API.Services
                 .Include(a => a.CandidateProfile)
                     .ThenInclude(cp => cp.User)
                 .Include(a => a.AssignedReviewers)
-                .Where(a=>a.AssignedReviewers.Any(ar=>ar.Uid == reviewerId))
+                .Where(a => a.AssignedReviewers.Any(ar => ar.Uid == reviewerId))
                 .Select(a => new JobApplicationDto
                 {
                     JobApplicationId = a.JobApplicationId,

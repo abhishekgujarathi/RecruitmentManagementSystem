@@ -7,8 +7,10 @@ export const AuthProvider = ({ children }) => {
     user: null,
     token: null,
     refreshToken: null,
+    // candi/empl
     role: null,
-    permissions: [],
+    // inter/rev/recr
+    employeeRoles: [], // aded this new for rec/rev/int
     isLoading: true,
     error: null,
   });
@@ -17,15 +19,16 @@ export const AuthProvider = ({ children }) => {
     const savedToken = localStorage.getItem("token");
     const savedRefreshToken = localStorage.getItem("refreshToken");
     const savedUser = localStorage.getItem("user");
-    const savedRole = localStorage.getItem("role");
+    const savedUserType = localStorage.getItem("role");
+    const savedEmployeeRoles = localStorage.getItem("employeeRoles");
 
     if (savedToken) {
       setAuthState({
         user: savedUser ? JSON.parse(savedUser) : null,
         token: savedToken,
         refreshToken: savedRefreshToken,
-        role: savedRole || null,
-        permissions: [],
+        role: savedUserType || null,
+        employeeRoles: savedEmployeeRoles ? JSON.parse(savedEmployeeRoles) : [],
         isLoading: false,
         error: null,
       });
@@ -34,11 +37,13 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = ({ token, refreshToken, user, role }) => {
+  const login = ({ token, refreshToken, user, role, employeeRoles }) => {
     if (token) localStorage.setItem("token", token);
     if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
     if (user) localStorage.setItem("user", JSON.stringify(user));
     if (role) localStorage.setItem("role", role);
+    if (employeeRoles)
+      localStorage.setItem("employeeRoles", JSON.stringify(employeeRoles));
 
     setAuthState((prev) => ({
       ...prev,
@@ -46,6 +51,7 @@ export const AuthProvider = ({ children }) => {
       token: token || prev.token,
       refreshToken: refreshToken || prev.refreshToken,
       role: role || prev.role,
+      employeeRoles: employeeRoles || prev.employeeRoles,
       isLoading: false,
       error: null,
     }));
@@ -61,6 +67,11 @@ export const AuthProvider = ({ children }) => {
       if (updated.user)
         localStorage.setItem("user", JSON.stringify(updated.user));
       if (updated.role) localStorage.setItem("role", updated.role);
+      if (updated.employeeRoles)
+        localStorage.setItem(
+          "employeeRoles",
+          JSON.stringify(updated.employeeRoles)
+        );
 
       return updated;
     });
@@ -71,13 +82,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     localStorage.removeItem("role");
+    localStorage.removeItem("employeeRoles");
 
     setAuthState({
       user: null,
       token: null,
       refreshToken: null,
       role: null,
-      permissions: [],
+      employeeRoles: [],
       isLoading: false,
       error: null,
     });
@@ -92,8 +104,8 @@ export const AuthProvider = ({ children }) => {
         logout,
       }}
     >
-      {console.log(authState)}
       {children}
+      {console.log(authState)}
     </AuthContext.Provider>
   );
 };

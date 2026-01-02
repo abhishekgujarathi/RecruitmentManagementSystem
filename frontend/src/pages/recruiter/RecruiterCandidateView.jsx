@@ -70,7 +70,8 @@ const RecruiterCandidateView = () => {
   const getReviewerList = async () => {
     // fetching list of reviweres
     try {
-      const res = await api.get(`/Reviewers/`, { params: applicationId });
+      const res = await api.get(`/Reviewers/${applicationId}`);
+      console.log("revlist2", res.data);
       setReviewers(res.data);
     } catch (err) {
       console.error("Failed to fetch profile:", err);

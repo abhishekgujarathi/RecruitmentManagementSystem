@@ -22,7 +22,7 @@ namespace RecruitmentManagementSystem.API.DTOS.Request
         public required string Password { get; set; }
 
         [Required]
-        public required string Role { get; set; }
+        public required string Role { get; set; } // candidate / emplye
 
         [Required]
         [Phone]

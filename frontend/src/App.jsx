@@ -20,20 +20,20 @@ import CandidateSideNav from "./components/candidate/side-nav";
 import CandidateDashboard from "./pages/candidate/CandidateDashboard";
 import CandidateProfile from "./pages/candidate/CandidateProfile";
 
-import RecruiterSideNav from "./components/recruiter/side-nav";
+// import RecruiterSideNav from "./components/recruiter/side-nav";
 import CreateJob from "./pages/recruiter/CreateJob";
 import { Toaster } from "sonner";
 import UpdateJob from "./pages/recruiter/UpdateJob";
-import RecruiterDashboard from "./pages/recruiter/RecruiterDashboard";
 import CandidateProfileUpdate from "./pages/candidate/CandidateProfileUpdate";
-import api from "./services/api";
-import RtCandidateProfile from "./pages/recruiter/OLDRtCandidateProfile";
 import RecruiterCandidateView from "./pages/recruiter/RecruiterCandidateView";
 
 // import NotFoundPage from "./pages/NotFoundPage";
 import { pdfjs } from "react-pdf";
 import ReviewerSideNav from "./components/reviewer/side-nav";
 import AssignedApplications from "./pages/reviewer/AssignedApplications";
+import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+
+import EmployeeSideNav from "./components/employee/side-nav";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -104,14 +104,14 @@ function App() {
 
           {/* recruiter routee */}
           <Route
-            path="/recruiter"
+            path="/employee"
             element={
-              <ProtectedRoute requiredRole="recruiter">
-                <DashboardLayout leftContent={<RecruiterSideNav />} />
+              <ProtectedRoute>
+                <DashboardLayout leftContent={<EmployeeSideNav />} />
               </ProtectedRoute>
             }
           >
-            <Route path="dashboard" element={<RecruiterDashboard />} />
+            <Route path="dashboard" element={<EmployeeDashboard />} />
             <Route path="jobs" element={<Jobs pageHeading={"Jobs"} />} />
             <Route path="jobs/:jobId" element={<JobDetail />} />
             <Route path="create-job" element={<CreateJob />} />

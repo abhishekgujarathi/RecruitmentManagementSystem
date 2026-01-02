@@ -41,15 +41,37 @@ export function LoginForm({ className, ...props }) {
       const response = await api.post("/Auth/login", formData);
       const token = response.data.authToken;
 
-      // decode role
       const decoded = jwtDecode(token);
 
-      const userRole =
-        decoded.role ||
-        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+      let userType = null;
+      let employeeRoles = [];
+
+      // depends if role is arr or string[single]
+      const roleClaimKey =
+        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"; // this is a must to check
+      const roles = Array.isArray(decoded[roleClaimKey])
+        ? decoded[roleClaimKey]
+        : [decoded[roleClaimKey]];
+
+      if (roles.includes("Candidate")) {
+        userType = "Candidate";
+        employeeRoles = [];
+      } else if (roles.includes("Employee")) {
+        userType = "Employee";
+        // flitr out employee roles
+        employeeRoles = roles.filter((r) => r !== "Employee");
+      } else {
+        // last try else null
+        userType = roles[0] || null;
+        employeeRoles = ["aa"];
+      }
+
+      // if (roles) {
+      //   userType = [decoded];
+      // }
 
       // update context and localStorage
-      login({ token, role: userRole });
+      login({ token, role: userType, employeeRoles: employeeRoles });
     } catch (error) {
       console.error(error);
     }

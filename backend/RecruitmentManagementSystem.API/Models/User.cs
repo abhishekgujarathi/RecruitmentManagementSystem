@@ -18,8 +18,8 @@ namespace RecruitmentManagementSystem.API.Models
         public string? Gender { get; set; }
 
         // Foreign key for UserRole
-        public Guid UserRoleId { get; set; }
-        public UserRole UserRole { get; set; } = default!;
+        public Guid UserTypeId { get; set; }
+        public UserType UserType { get; set; } = default!;
 
         public required DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? LastLogin { get; set; }
@@ -30,5 +30,9 @@ namespace RecruitmentManagementSystem.API.Models
 
         // makes easy to access users profile if there
         public CandidateProfile? CandidateProfile { get; set; }
+
+        // if employee then its employee roles [rec/int/rev]
+        public ICollection<EmployeeUserRole> EmployeeUserRoles { get; set; }
+        = new List<EmployeeUserRole>();
     }
 }

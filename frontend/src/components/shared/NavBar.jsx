@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const Navbar = ({
   logo = {
@@ -22,7 +23,9 @@ const Navbar = ({
     title: "RPMS",
   },
 }) => {
-  const { authState, updateAuthState } = useContext(AuthContext);
+  // const { authState, updateAuthState } = useContext(AuthContext);
+  const { authState, updateAuthState } = useAuth();
+
   const isLoggedIn = !!authState?.token;
 
   // nav links
@@ -40,6 +43,7 @@ const Navbar = ({
     // { title: "Pricing", url: "/pricing" },
     // { title: "Blog", url: "/blog" },
   ];
+
   const auth = {
     login: { title: "Login", url: "/login" },
     signup: { title: "Sign up", url: "/register" },
@@ -66,14 +70,13 @@ const Navbar = ({
       <div className="container mx-auto px-4">
         <nav className="hidden lg:flex items-center justify-between">
           <a
-            href={`/${authState.role?.toLowerCase()}/dashboard`}
+            href={`${authState?.role}/dashboard`}
             className="flex items-center gap-2"
           >
             <span className="text-lg font-semibold tracking-tight">
               {logo.title}
             </span>
           </a>
-
           {/* pc menu */}
           <NavigationMenu>
             <NavigationMenuList className="flex gap-6">
@@ -110,7 +113,10 @@ const Navbar = ({
 
         {/* mob navbar */}
         <div className="flex items-center justify-between lg:hidden">
-          <a href="/" className="flex items-center gap-2">
+          <a
+            href={`${authState?.role}/dashboard`}
+            className="flex items-center gap-2"
+          >
             <span className="text-lg font-semibold">{logo.title}</span>
           </a>
 

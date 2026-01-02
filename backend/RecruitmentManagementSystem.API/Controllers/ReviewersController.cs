@@ -16,12 +16,14 @@ namespace RecruitmentManagementSystem.API.Controllers
 
         }
 
-        // returns list of all reviewers
-        [HttpGet("{applicationId:guid}")]
-        public async Task<IActionResult> GetReviewers([FromQuery] Guid applicationId)
+        // returns list of all reviewers 
+        // used to select reviewers to assgin
+        [HttpGet("{applicationId}")]
+        public async Task<IActionResult> GetReviewers(Guid applicationId)
         {
             var result = await _reviewersService.GetReviewersAsync(applicationId);
 
+            //return Ok();
             return Ok(result);
         }
 

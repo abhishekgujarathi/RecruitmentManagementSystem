@@ -37,7 +37,9 @@ namespace RecruitmentManagementSystem.API.Services
             // FirstOrDefaultAsync gets first record for the given id or column value
             // similar to select * from tabl where col=val;
             var user = await _context.Users
-                .Include(u => u.UserRole)
+                .Include(u => u.UserType)
+                .Include(u => u.EmployeeUserRoles)
+                    .ThenInclude(eur => eur.EmployeeRole)
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
 
@@ -77,12 +79,12 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
             // requested role is invalid or admin?
-            var userRole = await _context.UserRoles.FirstOrDefaultAsync(ur => ur.RoleName == request.Role);
+            var userType = await _context.UserTypes.FirstOrDefaultAsync(ut => ut.TypeName == request.Role); // candidate or emploee
 
-            if (userRole is null)
+            if (userType is null)
                 return null;
 
-            if (userRole.RoleName == "Admin")
+            if (userType.TypeName == "Admin")
                 return null;
 
             // creating user object
@@ -91,7 +93,7 @@ namespace RecruitmentManagementSystem.API.Services
                 Fname = request.Fname,
                 Lname = request.Lname,
                 Email = request.Email,
-                UserRoleId = userRole.UserRoleId, 
+                UserTypeId = userType.UserTypeId,
                 MobileNumber = request.MobileNumber,
                 DOB = request.DOB,
                 Gender = request.Gender,
@@ -125,7 +127,13 @@ namespace RecruitmentManagementSystem.API.Services
 
         public async Task<User?> ValidateRefreshTokensAsync(Guid userId, string refreshToken)
         {
-            var user = await _context.Users.FindAsync(userId);
+            // not working to refresh roles in claims 
+            // [now working]
+            var user = await _context.Users
+                .Include(u => u.UserType)
+                .Include(u => u.EmployeeUserRoles)
+                    .ThenInclude(eur => eur.EmployeeRole)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user is null
                 || user.RefreshToken != refreshToken
@@ -144,6 +152,8 @@ namespace RecruitmentManagementSystem.API.Services
                 AuthToken = CreateToken(user),
                 RefreshToken = await GenerateAndSaveRefreshTokenAsync(user)
             };
+
+
         }
 
         private string GenerateRefreshToken()
@@ -171,8 +181,18 @@ namespace RecruitmentManagementSystem.API.Services
             {
                 new Claim(ClaimTypes.Name, user.Fname),
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Role, user.UserRole.RoleName)
+                new Claim(ClaimTypes.Role, user.UserType.TypeName) //add candi/employee
             };
+
+            //if the user is emplye then add its roles
+            if (user.UserType.TypeName == "Employee")
+            {
+                foreach (var eur in user.EmployeeUserRoles)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, eur.EmployeeRole.RoleName)); // addingg rev/int/rec
+                }
+            }
+
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!));
 

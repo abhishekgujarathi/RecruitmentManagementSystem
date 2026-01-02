@@ -22,8 +22,10 @@ const JobDetail = () => {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const role = authState?.role?.toLowerCase();
   const isLoggedIn = !!authState?.token;
+
+  const role = authState?.role;
+  const employeeRoles = authState?.employeeRoles;
 
   // --- FETCH DATA ---
   useEffect(() => {
@@ -143,7 +145,7 @@ const JobDetail = () => {
                 )}
 
                 {/* 2. recruiter */}
-                {isLoggedIn && role === "recruiter" && (
+                {isLoggedIn && employeeRoles.includes("Recruiter") && (
                   <div className="flex flex-col gap-3">
                     <Button
                       className="w-full"
@@ -163,7 +165,7 @@ const JobDetail = () => {
 
                 {/* candidate */}
                 {isLoggedIn &&
-                  role === "candidate" &&
+                  role == "Candidate" &&
                   (job.isApplied ? (
                     <Button variant="ghost" className="w-full" size="lg">
                       Already Applied
@@ -178,8 +180,9 @@ const JobDetail = () => {
           </Card>
         </div>
       </div>
+      {console.log(isLoggedIn, role, role.includes("Recruiter"))}
       <div className="container py-4 mt-8 border">
-        {isLoggedIn && role === "recruiter" && (
+        {isLoggedIn && employeeRoles.includes("Recruiter") && (
           <JobApplicantsList jobId={jobId} />
         )}
       </div>

@@ -1,17 +1,31 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
-export const ProtectedRoute = ({ children, requiredRole }) => {
+export const ProtectedRoute = ({
+  children,
+  requiredUserType,
+  requiredEmployeeRole,
+}) => {
   const { authState } = useAuth();
-  if (authState.isLoading) {
-    return <div>Loading...</div>;
-  }
+  const { token, userType, employeeRoles, isLoading } = authState;
 
-  if (!authState?.token) return <Navigate to="/login" replace />;
+  if (isLoading) return <div>Loading...</div>;
 
+  if (!token) return <Navigate to="/login" replace />;
+
+  // cecking if canidate/emplyee
   if (
-    requiredRole &&
-    authState.role?.toLowerCase() !== requiredRole.toLowerCase()
+    requiredUserType &&
+    userType?.toLowerCase() !== requiredUserType.toLowerCase()
+  ) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+  // cecking if emplye roles - recruit/inter/review
+  if (
+    requiredEmployeeRole &&
+    !employeeRoles?.some(
+      (r) => r.toLowerCase() === requiredEmployeeRole.toLowerCase()
+    )
   ) {
     return <Navigate to="/unauthorized" replace />;
   }

@@ -14,11 +14,11 @@ const JobApplicantsList = () => {
   const { authState } = useAuth();
 
   useEffect(() => {
-    if (!authState?.role || authState.role.toLowerCase() !== "recruiter")
-      return;
+    if (!authState?.employeeRoles || !authState.employeeRoles) return;
 
     const fetchApplicants = async () => {
       try {
+        console.log("fetching");
         const response = await api.get(
           `/Recruiters/jobs/${jobId}/applications`
         );
@@ -34,7 +34,10 @@ const JobApplicantsList = () => {
     fetchApplicants();
   }, [jobId, authState]);
 
-  if (!authState?.role || authState.role.toLowerCase() !== "recruiter") {
+  if (
+    authState?.role !== "Employee" ||
+    !authState.employeeRoles?.includes("Recruiter")
+  ) {
     return null;
   }
 
@@ -77,7 +80,7 @@ const JobApplicantsList = () => {
                   </p>
                   <Button asChild>
                     <a
-                      href={`/recruiter/applications/${applicant.applicationId}`}
+                      href={`/employee/applications/${applicant.applicationId}`}
                     >
                       View Profile
                     </a>
