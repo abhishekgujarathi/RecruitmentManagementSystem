@@ -4,11 +4,12 @@
 
 This is the backend API for a Recruitment Process Management System (RPMS), built with **ASP.NET Core**, **Entity Framework Core** and **MSSQL**. Untill now it creates job listings, and public job viewing, secured using JWT Bearer authentication [roles].
 
-## ✨ Features
+## Features
 
 - **JWT Authentication:** API endpoints with **Bearer Tokens** with user roles (Recruiter, Admin, Candidate).
 - **Role-Based Authorization:** only Recruiters can create job.
-- **RESTful Job Management:** Public read access to job listings.
+- **Job Listing:** Public read access to job listings.
+- **Job Creation:** Create Job with basic details.
 - **Database:** Using  **SQL Server** via Entity Framework Core.
 - **API Documentation:** Using **Scalar**.
 
