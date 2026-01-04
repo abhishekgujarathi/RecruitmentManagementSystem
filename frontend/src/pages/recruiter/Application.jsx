@@ -1,0 +1,239 @@
+import React, { useEffect, useState } from "react";
+import api from "../../services/api";
+import { useParams } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Document, Page, pdfjs } from "react-pdf";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "../../hooks/useAuth";
+import PdfViewer from "../../components/PdfViewer";
+import ReviewSection from "../../components/reviewer/ReviewSection";
+import SkillReviewSection from "../../components/reviewer/SkillReviewSection";
+import ApplicationReviewSectio from "../../components/recruiter/ApplicationReviewSection";
+import ApplicationReviewSection from "../../components/recruiter/ApplicationReviewSection";
+
+const Application = () => {
+  const { applicationId } = useParams();
+
+  const { authState } = useAuth();
+
+  const [applicationSummary, setapplicationSummary] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [reviewers, setReviewers] = useState([]);
+  const [appliReviewers, setAppliReviewers] = useState([]);
+
+  const [selectedReviewerId, setSelectedReviewerId] = useState("");
+
+  const getApplicationSummary = async () => {
+    try {
+      const res = await api.get(`Applications/${applicationId}`);
+      setapplicationSummary(res.data);
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCV = async () => {
+    const res = await api.get(`Applications/${applicationId}/cv`, {
+      responseType: "blob",
+    });
+    console.log("download cv -", res);
+    if (res.status == 200) {
+      const fileURL = URL.createObjectURL(res.data);
+      setPdfFile(fileURL);
+    }
+  };
+
+  const getApplicationReviewers = async () => {
+    try {
+      if (!authState.employeeRoles.includes("Recruiter")) return;
+      const res = await api.get(`/Applications/${applicationId}/reviewers`);
+      console.log("revv-", res.data);
+      setAppliReviewers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getReviewerList = async () => {
+    // fetching list of reviweres
+    try {
+      if (!authState.employeeRoles.includes("Recruiter")) return;
+      const res = await api.get(`/Recruiters/employees/${applicationId}`);
+      // console.log("change this");
+      setReviewers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (date) =>
+    date ? new Date(date).toLocaleDateString("en-GB") : "N/A";
+
+  useEffect(() => {
+    getApplicationSummary();
+    getCV();
+    getApplicationReviewers();
+    getReviewerList();
+  }, []);
+
+  const assignReviewer = async () => {
+    if (!selectedReviewerId) return;
+
+    const res = await api.post(`Applications/${applicationId}/reviewers`, {
+      reviewerId: selectedReviewerId,
+    });
+
+    if (res.status == 200) {
+      getApplicationReviewers();
+      setReviewers([]);
+      getReviewerList();
+      alert("Reviewer Added");
+    }
+  };
+
+  if (loading)
+    return <div className="text-center py-10">Loading profile...</div>;
+  if (!applicationSummary)
+    return <div className="text-center py-10">Profile not found</div>;
+
+  return (
+    <div className="w-full mx-auto">
+      <Card className="shadow-sm">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">
+              {applicationSummary.fullName}
+            </CardTitle>
+            <div>{applicationSummary.currentStatus}</div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Applied on{" "}
+            {new Date(applicationSummary.applicationDate).toLocaleDateString()}
+          </p>
+        </CardHeader>
+
+        <Separator />
+
+        <CardContent className="space-y-4 pt-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Job Title</p>
+            <p className="font-medium">{applicationSummary.jobTitle}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Email</p>
+            <p className="font-medium">{applicationSummary.email}</p>
+          </div>
+        </CardContent>
+      </Card>
+      {/* reviewers card here */}
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Resume & Reviewers</CardTitle>
+        </CardHeader>
+
+        <CardContent className="flex flex-row">
+          <div className="border p-4 w-full">
+            <PdfViewer pdfFile={pdfFile} />
+
+            <Button className="mt-3" variant="outline">
+              Download CV
+            </Button>
+          </div>
+
+          {console.log(authState.employeeRoles)}
+          {authState.employeeRoles.includes("Recruiter") && (
+            <>
+              <div className="w-3/6 rounded-lg p-4">
+                <h3 className="font-semibold mb-4">Assigned Reviewers</h3>
+                {loading ? (
+                  <p>Loading reviewers...</p>
+                ) : appliReviewers?.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No reviewers assigned
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {appliReviewers?.map((r) => (
+                      <li
+                        key={r.id}
+                        className="flex justify-between items-center border-b pb-2"
+                      >
+                        <div>
+                          <p className="font-medium">{r.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Status: {r.status}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs">
+                            Assigned On: {formatDate(r.assignedDate) || "N/A"}
+                          </span>
+                          <span className="text-xs">
+                            Reviewed On: {formatDate(r.reviewedOn) || "Pending"}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="mt-5 space-y-2">
+                  <Select onValueChange={setSelectedReviewerId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Reviewer" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      {reviewers.map((r) => (
+                        <SelectItem key={r.key} value={r.key}>
+                          {r.value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    onClick={assignReviewer}
+                    className="w-full"
+                    disabled={!selectedReviewerId}
+                  >
+                    Assign Reviewer
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+      {/* reviews by reviewer */}
+      {authState.employeeRoles.includes("Recruiter") && (
+        <ApplicationReviewSection applicationId={applicationId} />
+      )}
+      {authState.employeeRoles.includes("Reviewer") && (
+        <>
+          <SkillReviewSection
+            applicationId={applicationId}
+          ></SkillReviewSection>
+          <ReviewSection applicationId={applicationId}></ReviewSection>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Application;

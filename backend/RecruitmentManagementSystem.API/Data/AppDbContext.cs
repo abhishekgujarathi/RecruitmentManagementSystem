@@ -20,6 +20,7 @@ namespace RecruitmentManagementSystem.API.Data
 
         public DbSet<JobType> JobTypes { get; set; }
         public DbSet<JobDescription> JobDescriptions { get; set; }
+        public DbSet<JobSkill> JobSkills { get; set; }
         public DbSet<Job> Jobs { get; set; }
 
 
@@ -39,6 +40,8 @@ namespace RecruitmentManagementSystem.API.Data
         // --- review ---
         public DbSet<AssignedReviewer> AssignedReviewers { get; set; }
         public DbSet<CVReviewStage> CVReviewStages { get; set; }
+        public DbSet<ApplicationSkill> ApplicationSkills { get; set; }
+        public DbSet<ReviewComment> ReviewComments { get; set; }
         // --- review ---
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -519,26 +522,77 @@ namespace RecruitmentManagementSystem.API.Data
                 .HasForeignKey(ar => ar.Uid)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // CVReviewStage -> Reviewer (User)
-            modelBuilder.Entity<CVReviewStage>()
-                .HasOne(c => c.Reviewer)
-                .WithMany()
-                .HasForeignKey(c => c.ReviewedByUid)
-                .OnDelete(DeleteBehavior.NoAction);
+
 
             modelBuilder.Entity<CVReviewStage>(entity =>
             {
-                entity.HasKey(c => c.CVReviewStageSid);
+                entity.HasKey(c => c.CVReviewStageId);
 
-
-
-                entity.HasOne(c => c.Reviewer)
-                      .WithMany()
-                      .HasForeignKey(c => c.ReviewedByUid)
-                      .OnDelete(DeleteBehavior.NoAction);
-
-
+                entity.HasOne<AssignedReviewer>()
+                      .WithMany(ar => ar.CVReviewStages)
+                      .HasForeignKey(c => c.AssignedReviewersId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
+            modelBuilder.Entity<AssignedReviewer>(entity =>
+            {
+                entity.HasOne(ar => ar.Reviewer)
+                      .WithMany()
+                      .HasForeignKey(ar => ar.Uid)
+                      .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            modelBuilder.Entity<CVReviewStage>()
+                .HasOne(c => c.AssignedReviewer)
+                .WithMany(a => a.CVReviewStages)
+                .HasForeignKey(c => c.AssignedReviewersId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+
+
+            // job application and review
+            modelBuilder.Entity<JobApplication>()
+                .HasMany(j => j.ReviewComments)
+                .WithOne(c => c.JobApplication)
+                .HasForeignKey(c => c.JobApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            
+            modelBuilder.Entity<JobApplication>()
+                .HasMany(j => j.ApplicationSkills)
+                .WithOne(s => s.JobApplication)
+                .HasForeignKey(s => s.JobApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ReviewComment>()
+               .HasOne(rc => rc.CommentedBy)
+               .WithMany()
+               .HasForeignKey(rc => rc.CommentedByUid)
+               .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReviewComment>()
+                .HasOne(rc => rc.JobApplication)
+                .WithMany(ja => ja.ReviewComments)
+                .HasForeignKey(rc => rc.JobApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            // job application and review
+
+
+            //adding job skills
+            modelBuilder.Entity<JobSkill>()
+                .HasOne(js => js.Job)
+                .WithMany(j => j.JobSkills)
+                .HasForeignKey(js => js.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<JobSkill>()
+                .HasOne(js => js.Skill)
+                .WithMany()
+                .HasForeignKey(js => js.SkillId)
+                .OnDelete(DeleteBehavior.Restrict);
+            //adding job skills
+
+
+
 
         }
     }

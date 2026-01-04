@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RecruitmentManagementSystem.API.Data;
 
@@ -11,9 +12,11 @@ using RecruitmentManagementSystem.API.Data;
 namespace RecruitmentManagementSystem.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104185437_review models")]
+    partial class reviewmodels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -27,9 +30,6 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.Property<Guid>("ApplicationSkillId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal?>("ExperienceYears")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("HasSkill")
                         .HasColumnType("bit");
@@ -84,17 +84,17 @@ namespace RecruitmentManagementSystem.API.Migrations
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.CVReviewStage", b =>
                 {
-                    b.Property<Guid>("CVReviewStageId")
+                    b.Property<Guid>("CVReviewStageSid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AssignedReviewersId")
+                    b.Property<Guid?>("AssignedReviewersId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool?>("IsPass")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("JobApplicationId")
+                    b.Property<Guid>("JobApplicationId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ReviewDate")
@@ -103,11 +103,16 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.Property<string>("ReviewStatus")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("CVReviewStageId");
+                    b.Property<Guid>("ReviewedByUid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("CVReviewStageSid");
 
                     b.HasIndex("AssignedReviewersId");
 
                     b.HasIndex("JobApplicationId");
+
+                    b.HasIndex("ReviewedByUid");
 
                     b.ToTable("CVReviewStages");
                 });
@@ -223,21 +228,21 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasData(
                         new
                         {
-                            CandidateSkillId = new Guid("9e66ad93-bd3e-4e5d-bc9f-83162467498e"),
+                            CandidateSkillId = new Guid("8df3b520-de8a-4da4-b293-77ac6d161d93"),
                             CandidateProfileId = new Guid("29d665b6-7013-4170-a8eb-844f2d79d356"),
-                            SkillId = new Guid("786cc2d5-b8e2-47f9-b70a-c55f6a6cc9fc")
+                            SkillId = new Guid("582456bc-f1ab-42a5-b852-9f0e9d664afe")
                         },
                         new
                         {
-                            CandidateSkillId = new Guid("b1aaf75c-8c4d-4c90-8cfe-1513d3dcf87f"),
+                            CandidateSkillId = new Guid("8f566f10-c466-4ece-9d9c-3b1d4e66822a"),
                             CandidateProfileId = new Guid("29d665b6-7013-4170-a8eb-844f2d79d356"),
-                            SkillId = new Guid("da232863-f64e-4a78-ad40-eff3ba8909b8")
+                            SkillId = new Guid("1d812ff8-4218-4852-80b0-a2551f3465d8")
                         },
                         new
                         {
-                            CandidateSkillId = new Guid("deb68cc9-7cee-4b75-8056-0e9495f8c8e3"),
+                            CandidateSkillId = new Guid("753827ff-7e0c-4ae3-9115-69ba9237f05f"),
                             CandidateProfileId = new Guid("29d665b6-7013-4170-a8eb-844f2d79d356"),
-                            SkillId = new Guid("4222f2c2-53f8-4c94-be5d-ebcbe47d826c")
+                            SkillId = new Guid("51228076-7dd7-49e2-8766-2c9c07e9426d")
                         });
                 });
 
@@ -393,19 +398,19 @@ namespace RecruitmentManagementSystem.API.Migrations
                         {
                             UserId = new Guid("331a9809-54d9-43c3-883a-493e8787f97a"),
                             EmployeeRoleId = new Guid("a12961ce-53d2-4294-99cb-b7916dbcec24"),
-                            AssignedOn = new DateTime(2026, 1, 4, 20, 4, 45, 385, DateTimeKind.Utc).AddTicks(9520)
+                            AssignedOn = new DateTime(2026, 1, 4, 18, 54, 37, 161, DateTimeKind.Utc).AddTicks(2943)
                         },
                         new
                         {
                             UserId = new Guid("7c6a8f5b-9b2e-4e4a-a1a1-111111111111"),
                             EmployeeRoleId = new Guid("9c0d0137-9b2e-47d5-8dac-8bc00bfd6e49"),
-                            AssignedOn = new DateTime(2026, 1, 4, 20, 4, 45, 385, DateTimeKind.Utc).AddTicks(9523)
+                            AssignedOn = new DateTime(2026, 1, 4, 18, 54, 37, 161, DateTimeKind.Utc).AddTicks(2946)
                         },
                         new
                         {
                             UserId = new Guid("8d7b9a6c-4c3f-4b5d-b2b2-222222222222"),
                             EmployeeRoleId = new Guid("041c97a7-8cb7-4476-b7b3-5ff64bbba57f"),
-                            AssignedOn = new DateTime(2026, 1, 4, 20, 4, 45, 385, DateTimeKind.Utc).AddTicks(9525)
+                            AssignedOn = new DateTime(2026, 1, 4, 18, 54, 37, 161, DateTimeKind.Utc).AddTicks(2948)
                         });
                 });
 
@@ -509,38 +514,38 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasData(
                         new
                         {
-                            JobId = new Guid("a77841be-9b65-44c2-8ae0-2ce8004429dd"),
+                            JobId = new Guid("37241a65-41c6-4669-b4f1-6df822971655"),
                             CreatedByUserId = new Guid("331a9809-54d9-43c3-883a-493e8787f97a"),
-                            CreatedDate = new DateTime(2025, 12, 25, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5641),
-                            DeadlineDate = new DateTime(2026, 1, 24, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5649),
-                            JobDescriptionId = new Guid("21810b29-0883-441e-a6d7-1d8edc6c3f9b"),
+                            CreatedDate = new DateTime(2025, 12, 25, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2066),
+                            DeadlineDate = new DateTime(2026, 1, 24, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2072),
+                            JobDescriptionId = new Guid("e758fdb2-9ae7-4294-bfc9-4a05fcef129b"),
                             OpeningsCount = 3
                         },
                         new
                         {
-                            JobId = new Guid("4cd2bc95-ab61-4a0d-b84e-a0c2146d5c28"),
+                            JobId = new Guid("aff3c433-ac58-4435-82ae-57ba62d99c5b"),
                             CreatedByUserId = new Guid("331a9809-54d9-43c3-883a-493e8787f97a"),
-                            CreatedDate = new DateTime(2025, 12, 28, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5654),
-                            DeadlineDate = new DateTime(2026, 1, 27, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5655),
-                            JobDescriptionId = new Guid("20e3be65-b67a-4132-8c4f-df163598c9a1"),
+                            CreatedDate = new DateTime(2025, 12, 28, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2076),
+                            DeadlineDate = new DateTime(2026, 1, 27, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2077),
+                            JobDescriptionId = new Guid("5018f850-1335-4e61-afc2-3a1db9a914b9"),
                             OpeningsCount = 2
                         },
                         new
                         {
-                            JobId = new Guid("a8aa2e5f-cde3-42d5-8309-f19a33a6f36d"),
+                            JobId = new Guid("03a00e98-67a8-4894-a165-3a28607a4e91"),
                             CreatedByUserId = new Guid("331a9809-54d9-43c3-883a-493e8787f97a"),
-                            CreatedDate = new DateTime(2025, 12, 30, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5672),
-                            DeadlineDate = new DateTime(2026, 1, 29, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5673),
-                            JobDescriptionId = new Guid("bf7f4a0e-e51d-49b9-9533-275a2b31c52a"),
+                            CreatedDate = new DateTime(2025, 12, 30, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2080),
+                            DeadlineDate = new DateTime(2026, 1, 29, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2081),
+                            JobDescriptionId = new Guid("92f5854b-2bfc-4136-9ed5-fdacef7afb27"),
                             OpeningsCount = 1
                         },
                         new
                         {
-                            JobId = new Guid("7423ad81-3e27-40eb-8ca0-7b31ffbb3061"),
+                            JobId = new Guid("e84d9f4f-7771-4e17-8107-2b6d22e7b7d2"),
                             CreatedByUserId = new Guid("331a9809-54d9-43c3-883a-493e8787f97a"),
-                            CreatedDate = new DateTime(2026, 1, 1, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5676),
-                            DeadlineDate = new DateTime(2026, 2, 3, 20, 4, 45, 387, DateTimeKind.Utc).AddTicks(5677),
-                            JobDescriptionId = new Guid("72a71874-3f8d-404a-8dc8-f711898f8524"),
+                            CreatedDate = new DateTime(2026, 1, 1, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2084),
+                            DeadlineDate = new DateTime(2026, 2, 3, 18, 54, 37, 163, DateTimeKind.Utc).AddTicks(2085),
+                            JobDescriptionId = new Guid("3a983a21-efba-4485-9e3c-3a68c7f153a0"),
                             OpeningsCount = 5
                         });
                 });
@@ -609,9 +614,9 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasData(
                         new
                         {
-                            JobDescriptionId = new Guid("21810b29-0883-441e-a6d7-1d8edc6c3f9b"),
+                            JobDescriptionId = new Guid("e758fdb2-9ae7-4294-bfc9-4a05fcef129b"),
                             Details = "We are looking for an experienced .NET developer to join our team. Must have strong C# and ASP.NET Core skills.",
-                            JobTypeId = new Guid("b5b7e11a-1bd9-4b9b-ab18-7203d85cfb52"),
+                            JobTypeId = new Guid("24ae3def-df95-463f-90b3-8d743c9670ad"),
                             Location = "Mumbai, India",
                             MinimumExperienceReq = 5,
                             Responsibilty = "Develop and maintain web applications, code reviews, mentor junior developers",
@@ -619,9 +624,9 @@ namespace RecruitmentManagementSystem.API.Migrations
                         },
                         new
                         {
-                            JobDescriptionId = new Guid("20e3be65-b67a-4132-8c4f-df163598c9a1"),
+                            JobDescriptionId = new Guid("5018f850-1335-4e61-afc2-3a1db9a914b9"),
                             Details = "Join our frontend team to build modern web applications using React and TypeScript.",
-                            JobTypeId = new Guid("b5b7e11a-1bd9-4b9b-ab18-7203d85cfb52"),
+                            JobTypeId = new Guid("24ae3def-df95-463f-90b3-8d743c9670ad"),
                             Location = "Bangalore, India",
                             MinimumExperienceReq = 3,
                             Responsibilty = "Build responsive UIs, optimize performance, collaborate with designers",
@@ -629,9 +634,9 @@ namespace RecruitmentManagementSystem.API.Migrations
                         },
                         new
                         {
-                            JobDescriptionId = new Guid("bf7f4a0e-e51d-49b9-9533-275a2b31c52a"),
+                            JobDescriptionId = new Guid("92f5854b-2bfc-4136-9ed5-fdacef7afb27"),
                             Details = "Seeking a DevOps engineer to manage our cloud infrastructure and CI/CD pipelines.",
-                            JobTypeId = new Guid("c1298f9b-36be-466d-8fbe-2169c0e10da2"),
+                            JobTypeId = new Guid("0c4e7b39-6ebb-4125-8b59-534e3ec3d905"),
                             Location = "Remote",
                             MinimumExperienceReq = 4,
                             Responsibilty = "Maintain AWS infrastructure, automate deployments, monitor systems",
@@ -639,38 +644,14 @@ namespace RecruitmentManagementSystem.API.Migrations
                         },
                         new
                         {
-                            JobDescriptionId = new Guid("72a71874-3f8d-404a-8dc8-f711898f8524"),
+                            JobDescriptionId = new Guid("3a983a21-efba-4485-9e3c-3a68c7f153a0"),
                             Details = "Entry-level position for fresh graduates passionate about Python and data science.",
-                            JobTypeId = new Guid("6e92f9bf-14ca-452d-90e9-89fe1b97d699"),
+                            JobTypeId = new Guid("00f8698f-94d2-4e05-9e59-c1497c00645d"),
                             Location = "Pune, India",
                             MinimumExperienceReq = 0,
                             Responsibilty = "Write clean code, learn from seniors, contribute to data pipelines",
                             Title = "Junior Python Developer"
                         });
-                });
-
-            modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobSkill", b =>
-                {
-                    b.Property<Guid>("JobSkillId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("JobId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("MinExperienceYears")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("SkillId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("JobSkillId");
-
-                    b.HasIndex("JobId");
-
-                    b.HasIndex("SkillId");
-
-                    b.ToTable("JobSkills");
                 });
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobType", b =>
@@ -690,17 +671,17 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasData(
                         new
                         {
-                            JobTypeId = new Guid("b5b7e11a-1bd9-4b9b-ab18-7203d85cfb52"),
+                            JobTypeId = new Guid("24ae3def-df95-463f-90b3-8d743c9670ad"),
                             TypeName = "Full-Time"
                         },
                         new
                         {
-                            JobTypeId = new Guid("6e92f9bf-14ca-452d-90e9-89fe1b97d699"),
+                            JobTypeId = new Guid("00f8698f-94d2-4e05-9e59-c1497c00645d"),
                             TypeName = "Part-Time"
                         },
                         new
                         {
-                            JobTypeId = new Guid("c1298f9b-36be-466d-8fbe-2169c0e10da2"),
+                            JobTypeId = new Guid("0c4e7b39-6ebb-4125-8b59-534e3ec3d905"),
                             TypeName = "Contract"
                         });
                 });
@@ -753,37 +734,37 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasData(
                         new
                         {
-                            SkillId = new Guid("786cc2d5-b8e2-47f9-b70a-c55f6a6cc9fc"),
+                            SkillId = new Guid("582456bc-f1ab-42a5-b852-9f0e9d664afe"),
                             IsActive = true,
                             Name = "C#"
                         },
                         new
                         {
-                            SkillId = new Guid("da232863-f64e-4a78-ad40-eff3ba8909b8"),
+                            SkillId = new Guid("1d812ff8-4218-4852-80b0-a2551f3465d8"),
                             IsActive = true,
                             Name = "ASP.NET Core"
                         },
                         new
                         {
-                            SkillId = new Guid("50829d6c-a2a3-4e6f-b4df-22a7b71799b6"),
+                            SkillId = new Guid("24aee018-88fb-42ec-a0ab-732d4c34ad2c"),
                             IsActive = true,
                             Name = "Entity Framework Core"
                         },
                         new
                         {
-                            SkillId = new Guid("596244f0-5a36-4995-bb57-00bcd5c05613"),
+                            SkillId = new Guid("79f07a26-1839-482c-a1a9-11257fc359ef"),
                             IsActive = true,
                             Name = "SQL Server"
                         },
                         new
                         {
-                            SkillId = new Guid("2976bbe9-235c-45bf-9e00-9e3d717e4602"),
+                            SkillId = new Guid("2d3e7595-695b-40a0-8c30-011934c3b068"),
                             IsActive = true,
                             Name = "JavaScript"
                         },
                         new
                         {
-                            SkillId = new Guid("4222f2c2-53f8-4c94-be5d-ebcbe47d826c"),
+                            SkillId = new Guid("51228076-7dd7-49e2-8766-2c9c07e9426d"),
                             IsActive = true,
                             Name = "React"
                         });
@@ -809,27 +790,27 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasData(
                         new
                         {
-                            SocialPlatformId = new Guid("d515fbf5-4ac7-45f5-8d33-9372aee9539b"),
+                            SocialPlatformId = new Guid("abd8ce77-eb66-4fcd-b028-160dbb0f0dbe"),
                             Name = "LinkedIn"
                         },
                         new
                         {
-                            SocialPlatformId = new Guid("f6089223-5d91-43aa-9d03-dcb081753454"),
+                            SocialPlatformId = new Guid("4fdd69af-2e30-48ce-bfab-b6311464e760"),
                             Name = "GitHub"
                         },
                         new
                         {
-                            SocialPlatformId = new Guid("f33509de-55d1-4b19-af42-7e8ac2c6b685"),
+                            SocialPlatformId = new Guid("fb074ad0-94bd-4b77-a0c8-4e8f1722bf9f"),
                             Name = "Portfolio"
                         },
                         new
                         {
-                            SocialPlatformId = new Guid("ec34f9bb-2a17-46b5-a10a-c203fb9e330a"),
+                            SocialPlatformId = new Guid("f831d657-e721-4dc0-b00b-46c7ebd946a6"),
                             Name = "Twitter"
                         },
                         new
                         {
-                            SocialPlatformId = new Guid("e3f5028c-b76c-49dd-962e-2e309d3d055a"),
+                            SocialPlatformId = new Guid("e4859af1-f528-4661-8f5a-9a62d05ef741"),
                             Name = "Stack Overflow"
                         });
                 });
@@ -897,7 +878,7 @@ namespace RecruitmentManagementSystem.API.Migrations
                         new
                         {
                             UserId = new Guid("a01a33a1-10c5-4424-a74b-0130a086b96e"),
-                            CreatedDate = new DateTime(2026, 1, 4, 20, 4, 44, 892, DateTimeKind.Utc).AddTicks(9819),
+                            CreatedDate = new DateTime(2026, 1, 4, 18, 54, 36, 680, DateTimeKind.Utc).AddTicks(4006),
                             DOB = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@exp.com",
                             Fname = "Admin",
@@ -905,13 +886,13 @@ namespace RecruitmentManagementSystem.API.Migrations
                             IsActive = true,
                             Lname = "User",
                             MobileNumber = "1234567890",
-                            PasswordHash = "AQAAAAIAAYagAAAAECqTyoYP39AXWBRDebQXx4t3mZJ+lutvFE8GCpjw9tQGF1nekBdI05blrkaK1kggJw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAELYRJ+yjINcPkLAO9BILehNhcZfTyE8We2OwASGOPkf3dMBA0yu23mpFScSHSbCacw==",
                             UserTypeId = new Guid("3b5143aa-62f9-49b8-ba06-3ae28505528e")
                         },
                         new
                         {
                             UserId = new Guid("331a9809-54d9-43c3-883a-493e8787f97a"),
-                            CreatedDate = new DateTime(2026, 1, 4, 20, 4, 44, 989, DateTimeKind.Utc).AddTicks(9977),
+                            CreatedDate = new DateTime(2026, 1, 4, 18, 54, 36, 769, DateTimeKind.Utc).AddTicks(3703),
                             DOB = new DateTime(1995, 5, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "peter@exp.com",
                             Fname = "Peter",
@@ -919,13 +900,13 @@ namespace RecruitmentManagementSystem.API.Migrations
                             IsActive = true,
                             Lname = "Parker",
                             MobileNumber = "0987654321",
-                            PasswordHash = "AQAAAAIAAYagAAAAEEfSHlc25dMoWBFp4RX+qaeTWS25k55zIOozQ+KbHnBvP0aB8Kvp0/AejPtDgv+86w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEHXrlpGLcxzr+zFTZeqGNkJy/HXk+daIjpOh4M23epLihs1bpp+QCVCtRgW2Zgl/UQ==",
                             UserTypeId = new Guid("3b5143aa-62f9-49b8-ba06-3ae28505528e")
                         },
                         new
                         {
                             UserId = new Guid("0a33c200-c9f2-4547-810a-b3337a72d733"),
-                            CreatedDate = new DateTime(2026, 1, 4, 20, 4, 45, 90, DateTimeKind.Utc).AddTicks(676),
+                            CreatedDate = new DateTime(2026, 1, 4, 18, 54, 36, 877, DateTimeKind.Utc).AddTicks(5798),
                             DOB = new DateTime(1998, 8, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "abhi@exp.com",
                             Fname = "Abhi",
@@ -933,13 +914,13 @@ namespace RecruitmentManagementSystem.API.Migrations
                             IsActive = true,
                             Lname = "G",
                             MobileNumber = "1111111111",
-                            PasswordHash = "AQAAAAIAAYagAAAAEAf4iWLRV6LNDi7ZYCQNEiatqIb7T9Kn/8qPsNktGcMuTsA1osUvlBgcZoUDsrnEcQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEPVjHZWkb9u9A7vkhSC79Yikg04G7/pQ/ev04YvG7R3oWTpd+wc8dJ1++ZhHv6f2SA==",
                             UserTypeId = new Guid("e91d74b9-67cb-41b5-9581-338a64a45122")
                         },
                         new
                         {
                             UserId = new Guid("7c6a8f5b-9b2e-4e4a-a1a1-111111111111"),
-                            CreatedDate = new DateTime(2026, 1, 4, 20, 4, 45, 187, DateTimeKind.Utc).AddTicks(821),
+                            CreatedDate = new DateTime(2026, 1, 4, 18, 54, 36, 975, DateTimeKind.Utc).AddTicks(9699),
                             DOB = new DateTime(1992, 3, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "reviewer@exp.com",
                             Fname = "Bruce",
@@ -947,13 +928,13 @@ namespace RecruitmentManagementSystem.API.Migrations
                             IsActive = true,
                             Lname = "Wayne",
                             MobileNumber = "2222222222",
-                            PasswordHash = "AQAAAAIAAYagAAAAEJmLH10rgjCwth4KCuySEDJtrMmFEo2vCn78IYAY9gYmEE5oyxW3Dhs7PWnDi4dXqg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAECEcx2dhl5xZ4aI+G6fB1c8Zdsr/z1XYsNsQqDRV2InV9qYYmye05keKw/Swx2uazA==",
                             UserTypeId = new Guid("3b5143aa-62f9-49b8-ba06-3ae28505528e")
                         },
                         new
                         {
                             UserId = new Guid("8d7b9a6c-4c3f-4b5d-b2b2-222222222222"),
-                            CreatedDate = new DateTime(2026, 1, 4, 20, 4, 45, 287, DateTimeKind.Utc).AddTicks(4844),
+                            CreatedDate = new DateTime(2026, 1, 4, 18, 54, 37, 66, DateTimeKind.Utc).AddTicks(8462),
                             DOB = new DateTime(1988, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "interviewer@exp.com",
                             Fname = "Tony",
@@ -961,7 +942,7 @@ namespace RecruitmentManagementSystem.API.Migrations
                             IsActive = true,
                             Lname = "Stark",
                             MobileNumber = "3333333333",
-                            PasswordHash = "AQAAAAIAAYagAAAAEGCpZV8Zu+sc3lPVdfE+cQ8l32LtzXHCYNykdBX+pr7n6RqeJGdRY8CZiLxeUWN+3w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEIRJpXZfXGTowQCySzJpjdyWXNhqN5XFEPDXSrRtpOWrOgG0lG6M3mwSEIzYO7OkQw==",
                             UserTypeId = new Guid("3b5143aa-62f9-49b8-ba06-3ae28505528e")
                         });
                 });
@@ -1035,17 +1016,25 @@ namespace RecruitmentManagementSystem.API.Migrations
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.CVReviewStage", b =>
                 {
-                    b.HasOne("RecruitmentManagementSystem.API.Models.AssignedReviewer", "AssignedReviewer")
+                    b.HasOne("RecruitmentManagementSystem.API.Models.AssignedReviewer", null)
                         .WithMany("CVReviewStages")
-                        .HasForeignKey("AssignedReviewersId")
+                        .HasForeignKey("AssignedReviewersId");
+
+                    b.HasOne("RecruitmentManagementSystem.API.Models.JobApplication", "JobApplication")
+                        .WithMany("CVReviewStages")
+                        .HasForeignKey("JobApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RecruitmentManagementSystem.API.Models.User", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUid")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("RecruitmentManagementSystem.API.Models.JobApplication", null)
-                        .WithMany("CVReviewStages")
-                        .HasForeignKey("JobApplicationId");
+                    b.Navigation("JobApplication");
 
-                    b.Navigation("AssignedReviewer");
+                    b.Navigation("Reviewer");
                 });
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.CVStorage", b =>
@@ -1198,25 +1187,6 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.Navigation("JobType");
                 });
 
-            modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobSkill", b =>
-                {
-                    b.HasOne("RecruitmentManagementSystem.API.Models.Job", "Job")
-                        .WithMany("JobSkills")
-                        .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RecruitmentManagementSystem.API.Models.Skill", "Skill")
-                        .WithMany()
-                        .HasForeignKey("SkillId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Job");
-
-                    b.Navigation("Skill");
-                });
-
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.ReviewComment", b =>
                 {
                     b.HasOne("RecruitmentManagementSystem.API.Models.User", "CommentedBy")
@@ -1273,8 +1243,6 @@ namespace RecruitmentManagementSystem.API.Migrations
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.Job", b =>
                 {
                     b.Navigation("Applications");
-
-                    b.Navigation("JobSkills");
                 });
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobApplication", b =>

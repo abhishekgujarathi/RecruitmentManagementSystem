@@ -11,6 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
 import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import JobApplicantsList from "../components/recruiter/applicants-list";
 
@@ -59,7 +60,7 @@ const JobDetail = () => {
 
   const handleApply = async () => {
     try {
-      await api.post(`/Candidate/apply/${jobId}`);
+      await api.post(`/Applications/jobs/${jobId}`);
       toast.success("Applied successfully!");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to apply.");

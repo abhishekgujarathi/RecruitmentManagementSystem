@@ -19,9 +19,7 @@ const JobApplicantsList = () => {
     const fetchApplicants = async () => {
       try {
         console.log("fetching");
-        const response = await api.get(
-          `/Recruiters/jobs/${jobId}/applications`
-        );
+        const response = await api.get(`Applications/jobs/${jobId}`);
         setApplicants(response.data);
         console.log("applicants list -", response.data);
       } catch (error) {

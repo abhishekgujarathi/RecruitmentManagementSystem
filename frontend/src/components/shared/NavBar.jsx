@@ -64,13 +64,13 @@ const Navbar = ({
 
   return (
     <section
-      className="py-4 border-b sticky top-0 bg-white
+      className="py-4 border-b sticky top-0 bg-white z-50
     "
     >
       <div className="container mx-auto px-4">
         <nav className="hidden lg:flex items-center justify-between">
           <a
-            href={`${authState?.role}/dashboard`}
+            href={`/${authState?.role?.toLowerCase()}/dashboard`}
             className="flex items-center gap-2"
           >
             <span className="text-lg font-semibold tracking-tight">
@@ -114,7 +114,7 @@ const Navbar = ({
         {/* mob navbar */}
         <div className="flex items-center justify-between lg:hidden">
           <a
-            href={`${authState?.role}/dashboard`}
+            href={`/${authState?.role?.toLowerCase()}/dashboard`}
             className="flex items-center gap-2"
           >
             <span className="text-lg font-semibold">{logo.title}</span>

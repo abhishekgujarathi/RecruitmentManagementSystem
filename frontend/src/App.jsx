@@ -25,15 +25,16 @@ import CreateJob from "./pages/recruiter/CreateJob";
 import { Toaster } from "sonner";
 import UpdateJob from "./pages/recruiter/UpdateJob";
 import CandidateProfileUpdate from "./pages/candidate/CandidateProfileUpdate";
-import RecruiterCandidateView from "./pages/recruiter/RecruiterCandidateView";
+import Application from "./pages/recruiter/Application";
 
 // import NotFoundPage from "./pages/NotFoundPage";
 import { pdfjs } from "react-pdf";
 import ReviewerSideNav from "./components/reviewer/side-nav";
-import AssignedApplications from "./pages/reviewer/AssignedApplications";
+import AssignedApplications from "./pages/reviewer/Applications";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 
 import EmployeeSideNav from "./components/employee/side-nav";
+import ReviewPage from "./pages/reviewer/ReviewPage";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -112,30 +113,41 @@ function App() {
             }
           >
             <Route path="dashboard" element={<EmployeeDashboard />} />
-            <Route path="jobs" element={<Jobs pageHeading={"Jobs"} />} />
+            <Route
+              path="jobs"
+              element={
+                <ProtectedRoute requiredEmployeeRole="Recruiter">
+                  <Jobs pageHeading={"Jobs"} />
+                </ProtectedRoute>
+              }
+            />
             <Route path="jobs/:jobId" element={<JobDetail />} />
-            <Route path="create-job" element={<CreateJob />} />
-            <Route path="update-job/:jobId" element={<UpdateJob />} />
+            <Route
+              path="create-job"
+              element={
+                <ProtectedRoute requiredEmployeeRole="Recruiter">
+                  <CreateJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="update-job/:jobId"
+              element={
+                <ProtectedRoute requiredEmployeeRole="Recruiter">
+                  {/* //employee but recruiter only */}
+                  <UpdateJob />
+                </ProtectedRoute>
+              }
+            />
 
             {/* for application */}
+            <Route path="applications" element={<AssignedApplications />} />
             <Route
               path="applications/:applicationId"
-              // element={<RtCandidateProfile />}
-              element={<RecruiterCandidateView />}
+              element={<Application />}
             />
-          </Route>
-
-          {/* reviewer routee */}
-          <Route
-            path="/reviewer"
-            element={
-              <ProtectedRoute requiredRole="reviewer">
-                <DashboardLayout leftContent={<ReviewerSideNav />} />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<>hlo</>} />
-            <Route path="applications" element={<AssignedApplications />} />
+            {/* for review */}
+            <Route path="review/:applicationId" element={<ReviewPage />} />
           </Route>
 
           {/* errors */}

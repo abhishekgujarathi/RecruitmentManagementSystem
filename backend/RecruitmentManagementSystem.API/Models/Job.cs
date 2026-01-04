@@ -15,6 +15,10 @@ namespace RecruitmentManagementSystem.API.Models
         public required Guid JobDescriptionId { get; set; }
         public JobDescription JobDescription { get; set; } = default!; // this is callled navigation property filled if needed directly by efcore
 
+        // use collection everywhere
+        public ICollection<JobSkill> JobSkills { get; set; } = new List<JobSkill>();
+
+
         public required int OpeningsCount { get; set; }
 
         // createdBy fk to the Recruiter User

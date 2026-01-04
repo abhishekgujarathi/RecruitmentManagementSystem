@@ -1,9 +1,4 @@
-﻿using AutoMapper.Configuration.Annotations;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using RecruitmentManagementSystem.API.Controllers.Candidate;
-using RecruitmentManagementSystem.API.DTOS.Response;
-using System.Reflection.Metadata.Ecma335;
+﻿using RecruitmentManagementSystem.API.DTOS.Response;
 
 namespace RecruitmentManagementSystem.API.Services
 {

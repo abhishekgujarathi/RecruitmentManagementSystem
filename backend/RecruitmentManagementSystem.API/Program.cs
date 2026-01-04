@@ -66,7 +66,7 @@ builder.Services.AddScoped<ICandidateService, CandidateService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IJobsService, JobsService>();
 builder.Services.AddScoped<ISkillsService, SkillsService>();
-builder.Services.AddScoped<IReviewersService, ReviewersService>();
+builder.Services.AddScoped<IApplicationsService, ApplicationsService>();
 
 
 

@@ -25,22 +25,8 @@ namespace RecruitmentManagementSystem.API.Services
 
         //return true if deleted 
 
-        // check-applications
-        Task<IEnumerable<JobApplicationDto>> GetJobApplicationsAsync(Guid jobId);
-
-        //get application info
-        Task<ApplicationSummaryDto> GetApplicationSummaryAsync(Guid applicationId);
-        Task<(byte[] FileBytes, string FileName)?> GetApplicationCVAsync(Guid applicationId);
-
-
-        // reviewer 
-        Task<List<ReviewerDto>> GetAssignedReviewersAsync(Guid applicationId);
-        Task<bool> AssignReviewerAsync(Guid applicationId, Guid reviewerId, Guid assignedById);
-
-        // unused
-        Task<RecruiterCandidateProfileDto> GetRecruiterCandidate(Guid candidateId);
-        // unused
-
+        //list of emplyees return
+        Task<List<KeyValuePair<Guid, string>>> GetAllEmployeesForReviewAsync(Guid applicationId);
     }
 
 
@@ -187,7 +173,7 @@ namespace RecruitmentManagementSystem.API.Services
 
                 if (jobType == null)
                 {
-                    return null; 
+                    return null;
                 }
 
                 job.JobDescription.JobTypeId = jobType.JobTypeId;
@@ -233,161 +219,36 @@ namespace RecruitmentManagementSystem.API.Services
             };
         }
 
-        public async Task<IEnumerable<JobApplicationDto>> GetJobApplicationsAsync(Guid jobId)
+        // return list of all employees
+        public async Task<List<KeyValuePair<Guid, string>>> GetAllEmployeesForReviewAsync(Guid applicationId)
         {
-            var job = await _context.Jobs
-                .FirstOrDefaultAsync(j => j.JobId == jobId);
 
-            if (job == null)
-                throw new Exception("Job not found.");
+            // getting alredy assigned reviewers
+            var assignedReviewerIds = await _context.AssignedReviewers
+               .Where(ar => ar.JobApplicationId == applicationId)
+               .Select(ar => ar.Uid)
+               .ToListAsync();
 
-            var applications = await _context.JobApplications
-                .Include(a => a.CandidateProfile)
-                .ThenInclude(cp => cp.User)
-                .Where(a => a.JobId == jobId)
-                .Select(a => new JobApplicationDto
-                {
-                    JobApplicationId = a.JobApplicationId,
-                    CandidateName = a.CandidateProfile.User.Fname + " " + a.CandidateProfile.User.Lname,
-                    ApplicationDate = a.ApplicationDate,
-                    CurrentStatus = a.CurrentStatus,
-                    CandidateProfileId = a.CandidateProfileId,
-                    ApplicationId = a.JobApplicationId
-                })
+            var result = await _context.Users
+                .Where(u =>
+                    u.IsActive &&
+                    u.UserType.TypeName == "Employee"
+
+                    // returning all employees
+                    // && u.EmployeeUserRoles.Any(eur =>
+                    //    //eur.EmployeeRole.RoleName == "Reviewer"
+                    //) 
+                    &&
+                    // filltring alredy assigned to the application id
+                    !assignedReviewerIds.Contains(u.UserId)
+                )
+                .Select(u => new KeyValuePair<Guid, string>(
+                    u.UserId,
+                    u.Fname + " " + u.Lname
+                ))
                 .ToListAsync();
-
-            return applications;
-        }
-
-
-        public async Task<ApplicationSummaryDto?> GetApplicationSummaryAsync(Guid applicationId)
-        {
-            //Job_Applications [status,applied on]
-            //candidate summary [name,email]
-            //job [position]
-
-            //applicationId
-
-            var jobApplication = await _context.JobApplications
-                .Include(ja => ja.CandidateProfile)
-                    .ThenInclude(cp => cp.User)
-                .Include(ja => ja.Job)
-                    .ThenInclude(j => j.JobDescription)
-                .FirstOrDefaultAsync(ja => ja.JobApplicationId == applicationId); 
-
-            if (jobApplication == null)
-                return null; 
-
-            return new ApplicationSummaryDto
-            {
-                JobApplicationId = jobApplication.JobApplicationId,
-                ApplicationDate = jobApplication.ApplicationDate,
-                CurrentStatus = jobApplication.CurrentStatus,
-                FullName = jobApplication.CandidateProfile?.User != null
-                    ? jobApplication.CandidateProfile.User.Fname + " " + jobApplication.CandidateProfile.User.Lname
-                    : "Unknown",
-                Email = jobApplication.CandidateProfile?.User?.Email ?? "Unknown",
-                JobTitle = jobApplication.Job?.JobDescription?.Title ?? "Unknown"
-            };
-
-        }
-
-        public async Task<(byte[] FileBytes, string FileName)?> GetApplicationCVAsync(Guid applicationId)
-        {
-                var application = await _context.JobApplications
-                .Include(a => a.CandidateProfile)
-                .FirstOrDefaultAsync(a => a.JobApplicationId == applicationId);
-
-            if (application == null)
-                return null;
-
-            var userId = application.CandidateProfile.UserId;
-
-            return _fileUploadService.DownloadPdf(userId);
-        }
-
-
-        // --- review ---
-        public async Task<List<ReviewerDto>> GetAssignedReviewersAsync(Guid applicationId)
-        {
-            var reviewers = await _context.AssignedReviewers
-                .Include(ar => ar.Reviewer)           
-                .Include(ar => ar.CVReviewStages)     
-                .Where(ar => ar.JobApplicationId == applicationId && ar.isActive)
-                .ToListAsync();
-
-            var result = reviewers.Select(ar =>
-            {
-                var reviewStage = ar.CVReviewStages
-                    .FirstOrDefault(cvs => cvs.JobApplicationId == applicationId && cvs.ReviewedByUid == ar.Uid);
-
-                return new ReviewerDto
-                {
-                    ReviewerId = ar.Uid,
-                    Name = $"{ar.Reviewer.Fname} {ar.Reviewer.Lname}",
-                    AssignedDate = ar.AssignedDate,
-                    Status = reviewStage != null ? "Completed" : "Pending",
-                    ReviewedOn = reviewStage?.ReviewDate
-                };
-            }).ToList();
 
             return result;
         }
-
-
-        public async Task<bool> AssignReviewerAsync(Guid applicationId, Guid reviewerId, Guid assignedById)
-        {
-            // Check if reviewer exists
-            var reviewerExists = await _context.Users.AnyAsync(u => u.UserId == reviewerId);
-            if (!reviewerExists)
-                throw new Exception("Reviewer does not exist.");
-
-            // Check if assigning recruiter exists
-            var assignerExists = await _context.Users.AnyAsync(u => u.UserId == assignedById);
-            if (!assignerExists)
-                throw new Exception("Assigning recruiter does not exist.");
-
-            var assignment = new AssignedReviewer
-            {
-                AssignedReviewersId = Guid.NewGuid(),
-                JobApplicationId = applicationId,
-                Uid = reviewerId,
-                AssignedByUid = assignedById,
-                AssignedDate = DateTime.UtcNow,
-                isActive = true
-            };
-
-            _context.AssignedReviewers.Add(assignment);
-            await _context.SaveChangesAsync();
-
-            return true;
-        }
-
-        // --- review ---
-
-
-        //not used now
-        public async Task<RecruiterCandidateProfileDto> GetRecruiterCandidate(Guid candidateId)
-        {
-
-            var profile = await _context.CandidateProfiles
-                .Include(cp => cp.User)
-                .Include(cp => cp.Educations)
-                .Include(cp => cp.Experiences)
-                .Include(cp => cp.CandidateSkills)
-                    .ThenInclude(cs => cs.Skill)
-                .FirstOrDefaultAsync(cp => cp.CandidateProfileId == candidateId);
-
-            if (profile == null)
-                return null;
-
-            var resultDto = _mapper.Map<RecruiterCandidateProfileDto>(profile);
-
-            return resultDto;
-        }
-        //not used now
-
-
-
     }
 }
