@@ -16,9 +16,9 @@ import { useAuth } from "../../hooks/useAuth";
 import PdfViewer from "../../components/PdfViewer";
 import ReviewSection from "../../components/reviewer/ReviewSection";
 import SkillReviewSection from "../../components/reviewer/SkillReviewSection";
-import ApplicationReviewSectio from "../../components/recruiter/ApplicationReviewsSection";
 import ApplicationReviewSection from "../../components/recruiter/ApplicationReviewsSection";
 import { toast } from "sonner";
+import ChangeStatusButton from "../../components/recruiter/ChangeStatusButton";
 
 const Application = () => {
   const { applicationId } = useParams();
@@ -109,17 +109,13 @@ const Application = () => {
     try {
       const res = await api.get(`Applications/${applicationId}/reviews/status`);
       setMyReviewStatus(res.data);
-      // optional: refetch application status / disable inputs
-    } catch (err) {
-      toast.error("Please complete skill & comment review before submitting");
-    }
+    } catch (err) {}
   };
 
   const submitReview = async () => {
     try {
       await api.post(`Applications/${applicationId}/reviews/submit`);
       toast.success("Review submitted successfully");
-      // optional: refetch application status / disable inputs
     } catch (err) {
       toast.error("Please complete skill & comment review before submitting");
     }
@@ -143,17 +139,28 @@ const Application = () => {
   return (
     <div className="w-full mx-auto">
       <Card className="shadow-sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
+        <CardHeader className="flex items-center justify-between">
+          <div className="flex flex-col items-center justify-between">
             <CardTitle className="text-xl">
               {applicationSummary.fullName}
             </CardTitle>
-            <div>{applicationSummary.currentStatus}</div>
+            <p className="text-sm text-muted-foreground">
+              Applied on{": "}
+              {new Date(
+                applicationSummary.applicationDate
+              ).toLocaleDateString()}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Applied on{" "}
-            {new Date(applicationSummary.applicationDate).toLocaleDateString()}
-          </p>
+          <div className="flex flex-col items-center justify-between">
+            {authState.employeeRoles.includes("Recruiter") ? (
+              <ChangeStatusButton
+                applicationId={applicationId}
+                currentStatus={applicationSummary.currentStatus}
+              />
+            ) : (
+              <div>Status: {applicationSummary.currentStatus}</div>
+            )}
+          </div>
         </CardHeader>
 
         <Separator />

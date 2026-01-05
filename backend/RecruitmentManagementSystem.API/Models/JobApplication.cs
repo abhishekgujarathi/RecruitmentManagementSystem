@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using RecruitmentManagementSystem.API.Common;
+using System.ComponentModel.DataAnnotations;
 
 namespace RecruitmentManagementSystem.API.Models
 {
@@ -18,8 +19,13 @@ namespace RecruitmentManagementSystem.API.Models
         [Required]
         public DateTime ApplicationDate { get; set; } = DateTime.UtcNow;
 
+
+        // managing status
         [MaxLength(50)]
-        public string? CurrentStatus { get; set; } = "Pending";
+        public string? CurrentStatus { get; set; } = ApplicationStatus.Applied;
+        public string? StatusNote { get; set; }
+        public DateTime? StatusUpdatedAt { get; set; }
+        // managin status
 
         public ICollection<AssignedReviewer> AssignedReviewers { get; set; } = new List<AssignedReviewer>();
         public ICollection<ReviewComment> ReviewComments { get; set; } = new List<ReviewComment>();

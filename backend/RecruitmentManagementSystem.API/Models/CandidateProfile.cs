@@ -1,3 +1,4 @@
+
 using Microsoft.Identity.Client.Extensions.Msal;
 using RecruitmentManagementSystem.API.Models;
 using System.ComponentModel.DataAnnotations;

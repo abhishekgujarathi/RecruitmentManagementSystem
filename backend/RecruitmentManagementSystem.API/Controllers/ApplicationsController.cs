@@ -172,7 +172,7 @@ namespace RecruitmentManagementSystem.API.Controllers
         {
             // new method to get userid in one line
             Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out Guid userId);
-            var result = await _applicationsService.GetReviewSkillsAsync(applicationId,userId);
+            var result = await _applicationsService.GetReviewSkillsAsync(applicationId, userId);
             return Ok(result);
         }
 
@@ -257,6 +257,26 @@ namespace RecruitmentManagementSystem.API.Controllers
             await _applicationsService.SubmitReviewAsync(applicationId, reviewerId);
             return NoContent();
         }
+
+        //PATCH /api/applications/{applicationId}/status
+        [Authorize(Roles = "Recruiter")]
+        [HttpPatch("{applicationId}/status")]
+        public async Task<IActionResult> UpdateApplicationStatus(Guid applicationId, [FromBody] UpdateApplicationStatusDto request)
+        {
+            Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value,out Guid recruiterId);
+
+            try
+            {
+                await _applicationsService.UpdateApplicationStatusAsync(applicationId, recruiterId, request);
+                return Ok();
+            }
+            catch(Exception e)
+            {
+                return BadRequest("Unable to update application status. "+ e.Message.ToString());
+
+            }
+        }
+
 
     }
 }

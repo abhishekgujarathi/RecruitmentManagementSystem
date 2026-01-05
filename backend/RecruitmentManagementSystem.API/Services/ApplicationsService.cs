@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using RecruitmentManagementSystem.API.Common;
 using RecruitmentManagementSystem.API.Common.Enums;
 using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.DTOS.Request;
@@ -10,6 +11,9 @@ namespace RecruitmentManagementSystem.API.Services
 {
     public interface IApplicationsService
     {
+        // updating status [now all status are coverd]
+        Task UpdateApplicationStatusAsync(Guid applicationId, Guid recruiterId, UpdateApplicationStatusDto dto);
+
         ////get reviewer's all applications
         Task<IEnumerable<JobApplicationDto>> GetApplicationsAsync(Guid reviewerId);
 
@@ -198,12 +202,12 @@ namespace RecruitmentManagementSystem.API.Services
 
         public async Task<bool> AssignReviewerAsync(Guid applicationId, Guid reviewerId, Guid assignedById)
         {
-            // Check if reviewer exists
+            // chek if reviewer exists
             var reviewerExists = await _context.Users.AnyAsync(u => u.UserId == reviewerId);
             if (!reviewerExists)
                 throw new Exception("Reviewer does not exist.");
 
-            // Check if assigning recruiter exists
+            // check if assigning recruiter exists
             var assignerExists = await _context.Users.AnyAsync(u => u.UserId == assignedById);
             if (!assignerExists)
                 throw new Exception("Assigning recruiter does not exist.");
@@ -267,7 +271,7 @@ namespace RecruitmentManagementSystem.API.Services
                 CandidateProfileId = candidateProfile.CandidateProfileId,
                 JobId = jobId,
                 ApplicationDate = DateTime.UtcNow,
-                CurrentStatus = "Pending"
+                CurrentStatus = ApplicationStatus.Applied
             };
 
             // saving commiting
@@ -539,7 +543,92 @@ namespace RecruitmentManagementSystem.API.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task UpdateApplicationStatusAsync(Guid applicationId,Guid recruiterId,UpdateApplicationStatusDto dto)
+        {
+            // ??? check for onHold - where to go from onHold?
 
+            // vallidating if status is null
+            if (string.IsNullOrWhiteSpace(dto.NewStatus))
+                throw new InvalidOperationException("New status is required.");
+
+
+            // chek application
+            var application = await _context.JobApplications
+                .Include(a => a.Job)
+                .Include(a => a.AssignedReviewers)
+                .FirstOrDefaultAsync(a => a.JobApplicationId == applicationId);
+            if (application == null)
+                throw new InvalidOperationException("Application not found.");
+
+
+            // getting status
+            var currentStatus = application.CurrentStatus ?? ApplicationStatus.Applied;
+            var newStatus = dto.NewStatus;
+
+            // checkin for final status
+            if (ApplicationStatus.FinalStatuses.Contains(currentStatus))
+                throw new InvalidOperationException(
+                    $"Cannot change status once application is {currentStatus}."
+                );
+
+            // usin rules of changing status
+            if (!ApplicationStatus.AllowedTransitions.TryGetValue(currentStatus, out var allowedNext) ||
+                !allowedNext.Contains(newStatus))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid status transition from {currentStatus} to {newStatus}."
+                );
+            }
+
+            // specific checking for note on hold
+            if (newStatus == ApplicationStatus.OnHold &&
+                string.IsNullOrWhiteSpace(dto.Note))
+            {
+                throw new InvalidOperationException(
+                    "OnHold status requires a note."
+                );
+            }
+
+            if (newStatus == ApplicationStatus.Shortlisted)
+            {
+                var hasPendingReviews = application.AssignedReviewers
+                    .Any(r => r.isActive && !r.IsReviewCompleted);
+
+                if (hasPendingReviews)
+                    throw new InvalidOperationException(
+                        "All reviewers must complete their reviews before shortlisting."
+                    );
+            }
+
+            // check for test
+            if (newStatus == ApplicationStatus.TestPassed  &&
+                currentStatus != ApplicationStatus.TestScheduled)
+            {
+                throw new InvalidOperationException(
+                    "Test must be scheduled before marking it as passed."
+                );
+            }
+
+            // check for interview
+            if (newStatus == ApplicationStatus.InterviewPassed &&
+                currentStatus != ApplicationStatus.InterviewScheduled)
+            {
+                throw new InvalidOperationException(
+                    "Interview must be scheduled before marking it as passed."
+                );
+            }
+
+
+            application.CurrentStatus = newStatus;
+            application.StatusUpdatedAt = DateTime.UtcNow;
+
+            if (newStatus == ApplicationStatus.OnHold)
+                application.StatusNote = dto.Note;
+            else
+                application.StatusNote = null;
+
+            await _context.SaveChangesAsync();
+        }
     }
 
 }

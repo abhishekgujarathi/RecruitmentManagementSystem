@@ -184,6 +184,80 @@ namespace RecruitmentManagementSystem.API.Data
                 interviewerUser
             );
 
+
+            // list of generated employees
+            // --- additional employee users ---
+            var employee1 = new User
+            {
+                UserId = Guid.NewGuid(),
+                Fname = "Rahul",
+                Lname = "Sharma",
+                Email = "rahul@exp.com",
+                MobileNumber = "9000000001",
+                CreatedDate = DateTime.UtcNow,
+                DOB = new DateTime(1990, 2, 12),
+                Gender = "Male",
+                IsActive = true,
+                UserTypeId = employeeTypeId
+            };
+            employee1.PasswordHash = passwordHasher.HashPassword(employee1, "1234567890");
+
+            var employee2 = new User
+            {
+                UserId = Guid.NewGuid(),
+                Fname = "Priya",
+                Lname = "Verma",
+                Email = "priya@exp.com",
+                MobileNumber = "9000000002",
+                CreatedDate = DateTime.UtcNow,
+                DOB = new DateTime(1992, 7, 8),
+                Gender = "Female",
+                IsActive = true,
+                UserTypeId = employeeTypeId
+            };
+            employee2.PasswordHash = passwordHasher.HashPassword(employee2, "1234567890");
+
+            var employee3 = new User
+            {
+                UserId = Guid.NewGuid(),
+                Fname = "Amit",
+                Lname = "Kumar",
+                Email = "amit@exp.com",
+                MobileNumber = "9000000003",
+                CreatedDate = DateTime.UtcNow,
+                DOB = new DateTime(1989, 11, 20),
+                Gender = "Male",
+                IsActive = true,
+                UserTypeId = employeeTypeId
+            };
+            employee3.PasswordHash = passwordHasher.HashPassword(employee3, "1234567890");
+
+            var employee4 = new User
+            {
+                UserId = Guid.NewGuid(),
+                Fname = "Sneha",
+                Lname = "Reddy",
+                Email = "sneha@exp.com",
+                MobileNumber = "9000000004",
+                CreatedDate = DateTime.UtcNow,
+                DOB = new DateTime(1994, 5, 5),
+                Gender = "Female",
+                IsActive = true,
+                UserTypeId = employeeTypeId
+            };
+            employee4.PasswordHash = passwordHasher.HashPassword(employee4, "1234567890");
+
+            // --- add them to modelBuilder ---
+            modelBuilder.Entity<User>().HasData(
+                employee1,
+                employee2,
+                employee3,
+                employee4
+            );
+
+            // list of generated employees
+
+
             // --- assigninroles to m-t-m --- 
 
             // definnin composite key due to m-t-m
