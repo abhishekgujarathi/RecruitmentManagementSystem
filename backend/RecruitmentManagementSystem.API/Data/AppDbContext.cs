@@ -39,7 +39,6 @@ namespace RecruitmentManagementSystem.API.Data
 
         // --- review ---
         public DbSet<AssignedReviewer> AssignedReviewers { get; set; }
-        public DbSet<CVReviewStage> CVReviewStages { get; set; }
         public DbSet<ApplicationSkill> ApplicationSkills { get; set; }
         public DbSet<ReviewComment> ReviewComments { get; set; }
         // --- review ---
@@ -524,15 +523,7 @@ namespace RecruitmentManagementSystem.API.Data
 
 
 
-            modelBuilder.Entity<CVReviewStage>(entity =>
-            {
-                entity.HasKey(c => c.CVReviewStageId);
-
-                entity.HasOne<AssignedReviewer>()
-                      .WithMany(ar => ar.CVReviewStages)
-                      .HasForeignKey(c => c.AssignedReviewersId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            
             modelBuilder.Entity<AssignedReviewer>(entity =>
             {
                 entity.HasOne(ar => ar.Reviewer)
@@ -540,12 +531,6 @@ namespace RecruitmentManagementSystem.API.Data
                       .HasForeignKey(ar => ar.Uid)
                       .OnDelete(DeleteBehavior.NoAction);
             });
-
-            modelBuilder.Entity<CVReviewStage>()
-                .HasOne(c => c.AssignedReviewer)
-                .WithMany(a => a.CVReviewStages)
-                .HasForeignKey(c => c.AssignedReviewersId)
-                .OnDelete(DeleteBehavior.NoAction);
 
 
 

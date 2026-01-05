@@ -222,6 +222,41 @@ namespace RecruitmentManagementSystem.API.Controllers
             return NoContent();
         }
 
+        //GET /api/applications/{applicationId}/reviews/status
+        // check if reviewer already reviewer has submitted their review
+        [Authorize(Roles = "Reviewer")]
+        [HttpGet("{applicationId}/reviews/status")]
+        public async Task<IActionResult> GetMyReviewStatus(Guid applicationId)
+        {
+            Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out Guid reviewerId);
+
+            var assignedReviewer = await _applicationsService.GetAssignedReviewerAsync(applicationId, reviewerId);
+
+            if (assignedReviewer == null)
+                return Forbid("You are not assigned to review this application.");
+
+            return Ok(new
+            {
+                IsAssigned = true,
+                IsReviewCompleted = assignedReviewer.IsReviewCompleted
+            });
+        }
+
+
+        //call only when to lock review for a submission
+        //POST /api/applications/{applicationId}/reviews/submit
+        [Authorize(Roles = "Reviewer")]
+        [HttpPost("{applicationId}/reviews/submit")]
+        public async Task<IActionResult> SubmitReview(Guid applicationId)
+        {
+            Guid.TryParse(
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+                out Guid reviewerId
+            );
+
+            await _applicationsService.SubmitReviewAsync(applicationId, reviewerId);
+            return NoContent();
+        }
 
     }
 }

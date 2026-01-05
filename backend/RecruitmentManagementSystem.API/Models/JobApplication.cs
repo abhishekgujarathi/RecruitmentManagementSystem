@@ -22,7 +22,6 @@ namespace RecruitmentManagementSystem.API.Models
         public string? CurrentStatus { get; set; } = "Pending";
 
         public ICollection<AssignedReviewer> AssignedReviewers { get; set; } = new List<AssignedReviewer>();
-        public ICollection<CVReviewStage> CVReviewStages { get; set; } = new List<CVReviewStage>();
         public ICollection<ReviewComment> ReviewComments { get; set; } = new List<ReviewComment>();
         public ICollection<ApplicationSkill> ApplicationSkills { get; set; } = new List<ApplicationSkill>();
 

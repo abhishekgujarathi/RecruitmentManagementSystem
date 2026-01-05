@@ -5,7 +5,7 @@ import axios from "axios";
 import api from "../../services/api";
 import { toast } from "sonner";
 
-const SkillReviewSection = ({ applicationId }) => {
+const SkillReviewSection = ({ disabled, applicationId }) => {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,9 +55,17 @@ const SkillReviewSection = ({ applicationId }) => {
     }
   };
 
+  if (!skills.length > 0)
+    return (
+      <Card className="border-none px-4">
+        <h3 className="font-semibold">Skill Review</h3>
+        <p>no skills to review</p>
+      </Card>
+    );
+
   return (
     <>
-      <Card className="p-4 space-y-4">
+      <Card className="border-none px-4">
         <h3 className="font-semibold">Skill Review</h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -95,9 +103,13 @@ const SkillReviewSection = ({ applicationId }) => {
           ))}
         </div>
 
-        <Button onClick={updateSkills} disabled={loading}>
-          {loading ? "Saving..." : "Update Skills"}
-        </Button>
+        {!disabled.isReviewCompleted && (
+          <div className="flex justify-center">
+            <Button className="w-2/6" onClick={updateSkills} disabled={loading}>
+              {loading ? "Saving..." : "Update Skills"}
+            </Button>
+          </div>
+        )}
       </Card>
     </>
   );

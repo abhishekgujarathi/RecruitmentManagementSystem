@@ -16,8 +16,9 @@ import { useAuth } from "../../hooks/useAuth";
 import PdfViewer from "../../components/PdfViewer";
 import ReviewSection from "../../components/reviewer/ReviewSection";
 import SkillReviewSection from "../../components/reviewer/SkillReviewSection";
-import ApplicationReviewSectio from "../../components/recruiter/ApplicationReviewSection";
-import ApplicationReviewSection from "../../components/recruiter/ApplicationReviewSection";
+import ApplicationReviewSectio from "../../components/recruiter/ApplicationReviewsSection";
+import ApplicationReviewSection from "../../components/recruiter/ApplicationReviewsSection";
+import { toast } from "sonner";
 
 const Application = () => {
   const { applicationId } = useParams();
@@ -29,6 +30,8 @@ const Application = () => {
   const [loading, setLoading] = useState(true);
   const [reviewers, setReviewers] = useState([]);
   const [appliReviewers, setAppliReviewers] = useState([]);
+
+  const [myReviewStatus, setMyReviewStatus] = useState(false);
 
   const [selectedReviewerId, setSelectedReviewerId] = useState("");
 
@@ -84,13 +87,6 @@ const Application = () => {
   const formatDate = (date) =>
     date ? new Date(date).toLocaleDateString("en-GB") : "N/A";
 
-  useEffect(() => {
-    getApplicationSummary();
-    getCV();
-    getApplicationReviewers();
-    getReviewerList();
-  }, []);
-
   const assignReviewer = async () => {
     if (!selectedReviewerId) return;
 
@@ -105,6 +101,39 @@ const Application = () => {
       alert("Reviewer Added");
     }
   };
+
+  // submit complete review
+
+  const getMyReviewStatus = async () => {
+    // GET /applications/{ applicationId }/myreviewstatus;
+    try {
+      const res = await api.get(`Applications/${applicationId}/reviews/status`);
+      setMyReviewStatus(res.data);
+      // optional: refetch application status / disable inputs
+    } catch (err) {
+      toast.error("Please complete skill & comment review before submitting");
+    }
+  };
+
+  const submitReview = async () => {
+    try {
+      await api.post(`Applications/${applicationId}/reviews/submit`);
+      toast.success("Review submitted successfully");
+      // optional: refetch application status / disable inputs
+    } catch (err) {
+      toast.error("Please complete skill & comment review before submitting");
+    }
+  };
+  // submit complete review
+
+  // useeffeect
+  useEffect(() => {
+    getApplicationSummary();
+    getCV();
+    getApplicationReviewers();
+    getReviewerList();
+    getMyReviewStatus();
+  }, []);
 
   if (loading)
     return <div className="text-center py-10">Loading profile...</div>;
@@ -224,14 +253,32 @@ const Application = () => {
       {authState.employeeRoles.includes("Recruiter") && (
         <ApplicationReviewSection applicationId={applicationId} />
       )}
-      {authState.employeeRoles.includes("Reviewer") && (
-        <>
-          <SkillReviewSection
-            applicationId={applicationId}
-          ></SkillReviewSection>
-          <ReviewSection applicationId={applicationId}></ReviewSection>
-        </>
-      )}
+      {authState.employeeRoles.includes("Reviewer") &&
+        myReviewStatus.isAssigned && (
+          <div className="container border p-4">
+            <h1 className="text-lg font-bold px-4">My Reviews</h1>
+            <SkillReviewSection
+              disabled={myReviewStatus}
+              applicationId={applicationId}
+            />
+            <Separator />
+            <ReviewSection
+              disabled={myReviewStatus}
+              applicationId={applicationId}
+            />
+            <Separator />
+            <div className="flex justify-center px-4 pt-8">
+              <Button
+                disabled={myReviewStatus.isReviewCompleted}
+                onClick={submitReview}
+              >
+                {!myReviewStatus.isReviewCompleted
+                  ? "Complete Review"
+                  : "Completed"}
+              </Button>
+            </div>
+          </div>
+        )}
     </div>
   );
 };

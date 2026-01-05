@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import api from "../../services/api";
 
-export default function ApplicationReviewSection({ applicationId }) {
+export default function ApplicationReviewsSection({ applicationId }) {
   const [reviews, setReviews] = useState([]);
 
   const fetchReviews = async () => {
@@ -41,33 +41,50 @@ export default function ApplicationReviewSection({ applicationId }) {
             <CardContent className="space-y-4 text-sm">
               {review.skills.length > 0 && (
                 <div>
-                  <div className="font-medium mb-1">Skills</div>
-                  <ul className="space-y-1">
+                  <div className="font-medium mb-2">Skills</div>
+
+                  {/*  to display skill review given by reviewer */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {review.skills.map((s) => (
-                      <li key={s.skillId} className="flex justify-between">
-                        <span>{s.skillName}</span>
-                        <span className="text-muted-foreground">
-                          {s.yearsOfExperience ?? 0} yrs
-                        </span>
-                      </li>
+                      <div key={s.skillId} className="border p-2 text-sm">
+                        <div className="font-medium truncate">
+                          {s.skillName}
+                        </div>
+
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <span>{s.yearsOfExperience ?? 0} yrs</span>
+                          <input
+                            type="checkbox"
+                            checked={s.hasSkill}
+                            readOnly
+                            className="h-4 w-4 cursor-default"
+                          />
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
 
+              {/* review comment */}
               {review.comments.length > 0 && (
                 <div>
-                  <div className="font-medium mb-1">Comments</div>
-                  <ul className="space-y-1">
+                  <div className="font-black mb-2">Comments</div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {review.comments.map((c) => (
-                      <li
+                      <div
                         key={c.reviewCommentId}
-                        className="border-l-2 pl-3 text-muted-foreground"
+                        className="border rounded-md p-3 text-sm"
                       >
-                        {c.commentText}
-                      </li>
+                        <p className="">{c.commentText}</p>
+
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          {new Date(c.commentDate).toLocaleDateString()}
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </CardContent>

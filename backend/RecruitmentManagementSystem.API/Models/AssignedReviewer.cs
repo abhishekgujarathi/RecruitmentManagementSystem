@@ -25,7 +25,12 @@ namespace RecruitmentManagementSystem.API.Models
         [Required]
         public bool isActive { get; set; } = true;
 
-        public ICollection<CVReviewStage> CVReviewStages { get; set; } = new List<CVReviewStage>();
+        // replacing those from cvreviewstage due to redundacy
+        public bool IsReviewCompleted { get; set; } = false;
+        public DateTime? ReviewCompletedAt { get; set; }
+        public bool? IsPass { get; set; }
+
+
 
     }
 }

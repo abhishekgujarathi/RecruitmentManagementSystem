@@ -29,7 +29,6 @@ import Application from "./pages/recruiter/Application";
 
 // import NotFoundPage from "./pages/NotFoundPage";
 import { pdfjs } from "react-pdf";
-import ReviewerSideNav from "./components/reviewer/side-nav";
 import AssignedApplications from "./pages/reviewer/Applications";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 

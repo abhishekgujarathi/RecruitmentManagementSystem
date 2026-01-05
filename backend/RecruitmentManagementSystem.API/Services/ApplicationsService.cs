@@ -48,7 +48,13 @@ namespace RecruitmentManagementSystem.API.Services
         // to get list of user comments 
         Task<List<ReviewCommentDto>> GetMyCommentsAsync(Guid applicationId, Guid userId);
         // to update comments
-        Task UpdateMyCommentsAsync(Guid applicationId, Guid userId, List<UpdateReviewCommentDto> comments);
+        Task<bool> UpdateMyCommentsAsync(Guid applicationId, Guid userId, List<UpdateReviewCommentDto> comments);
+
+
+        // check if review submited by user
+        Task<AssignedReviewer> GetAssignedReviewerAsync(Guid applicationId, Guid reviewerId);
+        // finnally submit review
+        Task SubmitReviewAsync(Guid applicationId, Guid reviewerId);
     }
     public class ApplicationsService : IApplicationsService
     {
@@ -173,26 +179,21 @@ namespace RecruitmentManagementSystem.API.Services
         {
             var reviewers = await _context.AssignedReviewers
                 .Include(ar => ar.Reviewer)
-                .Include(ar => ar.CVReviewStages)
                 .Where(ar => ar.JobApplicationId == applicationId && ar.isActive)
                 .ToListAsync();
 
-            var result = reviewers.Select(ar =>
+            var result = reviewers.Select(ar => new ReviewerDto
             {
-                var reviewStage = ar.CVReviewStages.FirstOrDefault();
-
-                return new ReviewerDto
-                {
-                    ReviewerId = ar.Uid,
-                    Name = $"{ar.Reviewer.Fname} {ar.Reviewer.Lname}",
-                    AssignedDate = ar.AssignedDate,
-                    Status = reviewStage != null ? "Completed" : "Pending",
-                    ReviewedOn = reviewStage?.ReviewDate
-                };
+                ReviewerId = ar.Uid,
+                Name = $"{ar.Reviewer.Fname} {ar.Reviewer.Lname}",
+                AssignedDate = ar.AssignedDate,
+                Status = ar.IsReviewCompleted ? "Completed" : "Pending",
+                ReviewedOn = ar.ReviewCompletedAt
             }).ToList();
 
             return result;
         }
+
 
 
         public async Task<bool> AssignReviewerAsync(Guid applicationId, Guid reviewerId, Guid assignedById)
@@ -278,19 +279,28 @@ namespace RecruitmentManagementSystem.API.Services
 
         public async Task<List<ReviewSkillDto>> GetReviewSkillsAsync(Guid applicationId, Guid userId)
         {
-            // getting appli id
+            // getting the application with job skills
             var application = await _context.JobApplications
                 .Include(a => a.Job)
                     .ThenInclude(j => j.JobSkills)
                         .ThenInclude(js => js.Skill)
                 .FirstAsync(a => a.JobApplicationId == applicationId);
 
-            // getting alreadyreviewed skills
+            // check if user is actually assigned
+            var isAssigned = await _context.AssignedReviewers
+                .AnyAsync(ar => ar.JobApplicationId == applicationId
+                                && ar.Uid == userId
+                                && ar.isActive);
+
+            if (!isAssigned)
+                return new List<ReviewSkillDto>();
+
+            // getting already reviewed skills
             var reviewedSkills = await _context.ApplicationSkills
                 .Where(x => x.JobApplicationId == applicationId && x.ReviewerId == userId)
                 .ToListAsync();
 
-            // getting skills of that job
+
             return application.Job.JobSkills.Select(js =>
             {
                 var review = reviewedSkills.FirstOrDefault(r => r.SkillId == js.SkillId);
@@ -306,14 +316,20 @@ namespace RecruitmentManagementSystem.API.Services
             }).ToList();
         }
 
-        public async Task UpdateReviewSkillsAsync(
-            Guid applicationId,
-            Guid reviewerId,
-            List<UpdateReviewSkillDto> skills)
+
+        public async Task UpdateReviewSkillsAsync(Guid applicationId, Guid reviewerId, List<UpdateReviewSkillDto> skills)
         {
+            // check if reviewer is assigned and active
+            var isAssigned = await _context.AssignedReviewers
+                .AnyAsync(ar => ar.JobApplicationId == applicationId
+                                && ar.Uid == reviewerId
+                                && ar.isActive);
+
+            if (!isAssigned)
+                throw new InvalidOperationException("You are not assigned to review this application.");
+
             foreach (var skill in skills)
             {
-
                 var existing = await _context.ApplicationSkills.FirstOrDefaultAsync(x =>
                     x.JobApplicationId == applicationId &&
                     x.SkillId == skill.SkillId &&
@@ -338,10 +354,11 @@ namespace RecruitmentManagementSystem.API.Services
                     existing.ExperienceYears = skill.YearsOfExperience;
                 }
             }
-            // need to do this step
-            // like commits in db
+
+            // Commit changes to the database
             await _context.SaveChangesAsync();
         }
+
 
 
         public async Task<List<RecruiterReviewDto>> GetAllReviewsAsync(Guid applicationId)
@@ -371,7 +388,8 @@ namespace RecruitmentManagementSystem.API.Services
             // gettin there skill reviews
             var skills = await _context.ApplicationSkills
                 .Where(s => s.JobApplicationId == applicationId &&
-                            reviewerIds.Contains(s.ReviewerId))
+                            reviewerIds.Contains(s.ReviewerId)
+                            )
                 .Select(s => new ReviewSkillDto
                 {
                     SkillId = s.SkillId,
@@ -382,18 +400,23 @@ namespace RecruitmentManagementSystem.API.Services
                 })
                 .ToListAsync();
 
-            // making desired dto
-            var result = reviewers.Select(r => new RecruiterReviewDto
-            {
-                UserId = r.Uid,
-                UserName = r.Reviewer.Fname + " " + r.Reviewer.Lname,
-                Comments = comments
-                    .Where(c => c.CommentedByUid == r.Uid)
-                    .ToList(),
-                Skills = skills
-                    .Where(s => s.ReviewerId == r.Uid)
-                    .ToList()
-            }).ToList();
+            // making dto
+            // making dto
+            var result = reviewers
+                .Select(r => new RecruiterReviewDto
+                {
+                    UserId = r.Uid,
+                    UserName = r.Reviewer.Fname + " " + r.Reviewer.Lname,
+                    Comments = comments
+                        .Where(c => c.CommentedByUid == r.Uid)
+                        .ToList(),
+                    Skills = skills
+                        .Where(s => s.ReviewerId == r.Uid)
+                        .ToList(),
+                    ReviewCompleted = r.IsReviewCompleted
+                })
+                .ToList();
+
 
             return result;
         }
@@ -401,8 +424,12 @@ namespace RecruitmentManagementSystem.API.Services
         public async Task<List<ReviewCommentDto>> GetMyCommentsAsync(Guid applicationId, Guid userId)
         {
             return await _context.ReviewComments
-                .Where(c => c.JobApplicationId == applicationId && c.CommentedByUid == userId)
+                .Include(c => c.JobApplication)
+                    .ThenInclude(ja => ja.AssignedReviewers)
                 .Include(c => c.CommentedBy)
+                .Where(c => c.JobApplicationId == applicationId
+                            && c.CommentedByUid == userId
+                            && c.JobApplication.AssignedReviewers.Any(ar => ar.Uid == userId)) // used any as multiple navs
                 .OrderByDescending(c => c.CommentDate)
                 .Select(c => new ReviewCommentDto
                 {
@@ -415,9 +442,18 @@ namespace RecruitmentManagementSystem.API.Services
                 .ToListAsync();
         }
 
-        public async Task UpdateMyCommentsAsync(Guid applicationId, Guid userId, List<UpdateReviewCommentDto> comments)
+
+        public async Task<bool> UpdateMyCommentsAsync(Guid applicationId, Guid userId, List<UpdateReviewCommentDto> comments)
         {
             //tried add,update, delete in one
+
+            var assignedReviewer = await _context.AssignedReviewers
+                .FirstOrDefaultAsync(ar =>
+                    ar.JobApplicationId == applicationId &&
+                    ar.Uid == userId &&
+                    ar.isActive);
+
+            if (assignedReviewer == null) return false;
 
             // first check if there are any already store review notes on application
             //also check if they are by the sender
@@ -468,7 +504,41 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
             await _context.SaveChangesAsync();
+            return true;
         }
+
+        //get reviw status 
+        public async Task<AssignedReviewer> GetAssignedReviewerAsync(Guid applicationId, Guid reviewerId)
+        {
+            var assignedReviewer = await _context.AssignedReviewers
+                .FirstOrDefaultAsync(ar =>
+                    ar.JobApplicationId == applicationId &&
+                    ar.Uid == reviewerId &&
+                    ar.isActive);
+
+            return assignedReviewer;
+        }
+
+        // submit and lock review
+        public async Task SubmitReviewAsync(Guid applicationId, Guid reviewerId)
+        {
+            // check if the reviewer was actually assigned or not
+            var assignedReviewer = await _context.AssignedReviewers
+                .FirstOrDefaultAsync(ar =>
+                    ar.JobApplicationId == applicationId &&
+                    ar.Uid == reviewerId &&
+                    ar.isActive);
+
+            if (assignedReviewer == null)
+                throw new InvalidOperationException("Reviewer not assigned to this application.");
+
+            // mark review as completed set tru and time
+            assignedReviewer.IsReviewCompleted = true;
+            assignedReviewer.ReviewCompletedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
 
     }
 
