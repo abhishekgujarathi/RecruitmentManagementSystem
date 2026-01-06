@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+schema.docx
+parsing/
+
 # dotenv files
 .env
 frontend/node_modules/

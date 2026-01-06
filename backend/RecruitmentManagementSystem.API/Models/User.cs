@@ -32,7 +32,6 @@ namespace RecruitmentManagementSystem.API.Models
         public CandidateProfile? CandidateProfile { get; set; }
 
         // if employee then its employee roles [rec/int/rev]
-        public ICollection<EmployeeUserRole> EmployeeUserRoles { get; set; }
-        = new List<EmployeeUserRole>();
+        public ICollection<EmployeeUserRole> EmployeeUserRoles { get; set; } = new List<EmployeeUserRole>();
     }
 }

@@ -9,7 +9,7 @@ namespace RecruitmentManagementSystem.API.Models
 
         // Reviewer User ID
         [Required]
-        public Guid Uid { get; set; }
+        public Guid ReviewerUserId { get; set; }
 
         [Required]
         public Guid JobApplicationId { get; set; }

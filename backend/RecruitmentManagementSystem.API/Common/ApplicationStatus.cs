@@ -14,7 +14,7 @@
         public const string TestScheduled = "TestScheduled";
         public const string TestPassed = "TestPassed";
         // interviw status
-        public const string InterviewScheduled = "InterviewScheduled";
+        public const string InterviewInProgress = "InterviewInProgress";
         public const string InterviewCompleted = "InterviewCompleted";
 
         // last finals
@@ -42,14 +42,14 @@
 
             [TestScheduled] = new[] { TestPassed, Rejected, OnHold },
 
-            [TestPassed] = new[] { InterviewScheduled, OnHold },
+            [TestPassed] = new[] { InterviewInProgress, OnHold },
 
-            [InterviewScheduled] = new[] { InterviewCompleted, Rejected, OnHold },
+            [InterviewInProgress] = new[] { InterviewCompleted, Rejected, OnHold },
 
             [InterviewCompleted] = new[] { Hired, Rejected, OnHold },
 
             // onhold can resume to previous logical stage
-            [OnHold] = new[] { Applied, UnderReview, Shortlisted, TestPassed, TestScheduled, InterviewScheduled, InterviewCompleted }
+            [OnHold] = new[] { Applied, UnderReview, Shortlisted, TestPassed, TestScheduled, InterviewInProgress, InterviewCompleted }
         };
     }
 

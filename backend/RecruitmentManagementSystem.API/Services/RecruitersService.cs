@@ -226,7 +226,7 @@ namespace RecruitmentManagementSystem.API.Services
             // getting alredy assigned reviewers
             var assignedReviewerIds = await _context.AssignedReviewers
                .Where(ar => ar.JobApplicationId == applicationId)
-               .Select(ar => ar.Uid)
+               .Select(ar => ar.ReviewerUserId)
                .ToListAsync();
 
             var result = await _context.Users

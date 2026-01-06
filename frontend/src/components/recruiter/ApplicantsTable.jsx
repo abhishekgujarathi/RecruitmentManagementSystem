@@ -51,7 +51,7 @@ export default function ApplicantsTable({
 
     setSelected([]);
   };
-
+  
   const disabled = !(nextStage && selected.length > 0);
 
   return (
@@ -103,6 +103,7 @@ export default function ApplicantsTable({
               <TableHead>Candidate</TableHead>
               <TableHead>Applied On</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead> Status Updated At</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -141,6 +142,10 @@ export default function ApplicantsTable({
 
                   <TableCell className="capitalize">
                     {a.currentStatus}
+                  </TableCell>
+
+                  <TableCell className="capitalize">
+                    {new Date(a.statusUpdatedAt).toLocaleDateString()}
                   </TableCell>
 
                   <TableCell className="text-right">

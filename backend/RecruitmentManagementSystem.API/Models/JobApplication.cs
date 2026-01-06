@@ -22,9 +22,9 @@ namespace RecruitmentManagementSystem.API.Models
 
         // managing status
         [MaxLength(50)]
-        public string? CurrentStatus { get; set; } = ApplicationStatus.Applied;
+        public string CurrentStatus { get; set; } = ApplicationStatus.Applied;
         public string? StatusNote { get; set; }
-        public DateTime? StatusUpdatedAt { get; set; }
+        public DateTime StatusUpdatedAt { get; set; }
         // managin status
 
         public ICollection<AssignedReviewer> AssignedReviewers { get; set; } = new List<AssignedReviewer>();
