@@ -5,6 +5,11 @@
 
 # dotenv files
 .env
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+# Ignore all .vite folders anywhere
+.vite/
 
 # User-specific files
 *.rsuser

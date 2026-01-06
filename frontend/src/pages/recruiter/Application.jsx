@@ -98,7 +98,7 @@ const Application = () => {
       getApplicationReviewers();
       setReviewers([]);
       getReviewerList();
-      alert("Reviewer Added");
+      toast("Reviewer Added");
     }
   };
 
@@ -109,6 +109,7 @@ const Application = () => {
     try {
       const res = await api.get(`Applications/${applicationId}/reviews/status`);
       setMyReviewStatus(res.data);
+      console.log(res.data);
     } catch (err) {}
   };
 
@@ -116,6 +117,10 @@ const Application = () => {
     try {
       await api.post(`Applications/${applicationId}/reviews/submit`);
       toast.success("Review submitted successfully");
+      setMyReviewStatus({
+        isAssgined: myReviewStatus.isAssgined,
+        isReviewCompleted: true,
+      });
     } catch (err) {
       toast.error("Please complete skill & comment review before submitting");
     }
@@ -130,6 +135,10 @@ const Application = () => {
     getReviewerList();
     getMyReviewStatus();
   }, []);
+
+  useEffect(() => {
+    getMyReviewStatus();
+  }, [myReviewStatus.isReviewCompleted]);
 
   if (loading)
     return <div className="text-center py-10">Loading profile...</div>;

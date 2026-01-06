@@ -59,6 +59,9 @@ namespace RecruitmentManagementSystem.API.Services
         Task<AssignedReviewer> GetAssignedReviewerAsync(Guid applicationId, Guid reviewerId);
         // finnally submit review
         Task SubmitReviewAsync(Guid applicationId, Guid reviewerId);
+
+        // for bulk status changes
+        Task UpdateBulkApplicationStatusAsync(List<Guid> applicationIds, Guid recruiterId, string newStatus, string note = null);
     }
     public class ApplicationsService : IApplicationsService
     {
@@ -238,6 +241,11 @@ namespace RecruitmentManagementSystem.API.Services
                 isActive = true
             };
 
+            var application = await _context.JobApplications.FirstOrDefaultAsync(ja => ja.JobApplicationId == applicationId);
+
+            application.CurrentStatus = ApplicationStatus.UnderReview;
+            application.StatusUpdatedAt = DateTime.UtcNow;
+
             _context.AssignedReviewers.Add(assignment);
             await _context.SaveChangesAsync();
 
@@ -264,6 +272,8 @@ namespace RecruitmentManagementSystem.API.Services
             if (alreadyApplied)
                 throw new Exception("Already applied to this job.");
 
+            // var jobReviewers = await _context.JobReviewers.Where(jr => jr.JobId == jobId).ToListAsync();
+
             // make new job application
             var newApplication = new JobApplication
             {
@@ -271,8 +281,25 @@ namespace RecruitmentManagementSystem.API.Services
                 CandidateProfileId = candidateProfile.CandidateProfileId,
                 JobId = jobId,
                 ApplicationDate = DateTime.UtcNow,
-                CurrentStatus = ApplicationStatus.Applied
+                CurrentStatus = ApplicationStatus.Applied,
+                //AssignedReviewers = jobReviewers
             };
+
+            // mapping each alrdy assigned reviewer to position to application
+            //foreach (var jr in jobReviewers)
+            //{
+            //    newApplication.AssignedReviewers.Add(new AssignedReviewer
+            //    {
+            //        AssignedReviewersId = Guid.NewGuid(),
+            //        JobApplicationId = newApplication.JobApplicationId,
+            //        Uid = jr.ReviewerId,
+            //        AssignedDate = DateTime.UtcNow,
+            //        AssignedByUid = jr.AssignedBy,
+            //        isActive = true
+            //    });
+            //}
+
+
 
             // saving commiting
             _context.JobApplications.Add(newApplication);
@@ -388,8 +415,9 @@ namespace RecruitmentManagementSystem.API.Services
                 })
                 .ToListAsync();
 
-
             // gettin there skill reviews
+
+
             var skills = await _context.ApplicationSkills
                 .Where(s => s.JobApplicationId == applicationId &&
                             reviewerIds.Contains(s.ReviewerId)
@@ -543,7 +571,7 @@ namespace RecruitmentManagementSystem.API.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateApplicationStatusAsync(Guid applicationId,Guid recruiterId,UpdateApplicationStatusDto dto)
+        public async Task UpdateApplicationStatusAsync(Guid applicationId, Guid recruiterId, UpdateApplicationStatusDto dto)
         {
             // ??? check for onHold - where to go from onHold?
 
@@ -601,7 +629,7 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
             // check for test
-            if (newStatus == ApplicationStatus.TestPassed  &&
+            if (newStatus == ApplicationStatus.TestPassed &&
                 currentStatus != ApplicationStatus.TestScheduled)
             {
                 throw new InvalidOperationException(
@@ -610,7 +638,7 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
             // check for interview
-            if (newStatus == ApplicationStatus.InterviewPassed &&
+            if (newStatus == ApplicationStatus.InterviewCompleted &&
                 currentStatus != ApplicationStatus.InterviewScheduled)
             {
                 throw new InvalidOperationException(
@@ -629,6 +657,77 @@ namespace RecruitmentManagementSystem.API.Services
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task UpdateBulkApplicationStatusAsync(List<Guid> applicationIds,Guid recruiterId,string newStatus,string note = null)
+        {
+            // checking if new status 
+            if (string.IsNullOrWhiteSpace(newStatus))
+                throw new InvalidOperationException("New status is required.");
+
+            // checking i hold note there
+            if (newStatus == ApplicationStatus.OnHold && string.IsNullOrWhiteSpace(note))
+                throw new InvalidOperationException("OnHold status requires a note.");
+
+            // getting alll applications
+            var applications = await _context.JobApplications
+                .Include(a => a.Job)
+                .Include(a => a.AssignedReviewers)
+                .Where(a => applicationIds.Contains(a.JobApplicationId))
+                .ToListAsync();
+
+            // loopin thru all applications
+            foreach (var application in applications)
+            {
+                try
+                {
+                    var currentStatus = application.CurrentStatus ?? ApplicationStatus.Applied;
+
+                    if (ApplicationStatus.FinalStatuses.Contains(currentStatus))
+                        continue; // cant change rejected or hired
+
+                    if (!ApplicationStatus.AllowedTransitions.TryGetValue(currentStatus, out var allowedNext) ||
+                        !allowedNext.Contains(newStatus))
+                        continue; // check valid transition
+
+                    
+                    // imp check all reviews complete
+                    if (newStatus == ApplicationStatus.Shortlisted)
+                    {
+                        var hasPendingReviews = application.AssignedReviewers
+                            .Any(r => r.isActive && !r.IsReviewCompleted);
+
+                        if (hasPendingReviews)
+                            continue;
+                    }
+
+                    // if test passed
+                    if (newStatus == ApplicationStatus.TestPassed &&
+                        currentStatus != ApplicationStatus.TestScheduled)
+                        continue;
+
+                    // validate interview passed
+                    if (newStatus == ApplicationStatus.InterviewCompleted &&
+                        currentStatus != ApplicationStatus.InterviewScheduled)
+                        continue;
+
+                    // updating status
+                    application.CurrentStatus = newStatus;
+                    application.StatusUpdatedAt = DateTime.UtcNow;
+
+                    if (newStatus == ApplicationStatus.OnHold)
+                        application.StatusNote = note;
+                    else
+                        application.StatusNote = null;
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
     }
 
 }

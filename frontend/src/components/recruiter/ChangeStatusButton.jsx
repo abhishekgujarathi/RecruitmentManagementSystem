@@ -9,7 +9,7 @@ const STATUSES = [
   "TestScheduled",
   "TestPassed",
   "InterviewScheduled",
-  "InterviewPassed",
+  "InterviewCompleted",
   "Hired",
   "Rejected",
   "OnHold",

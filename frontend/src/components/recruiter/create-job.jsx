@@ -6,6 +6,14 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,8 +21,11 @@ import { Button } from "@/components/ui/button";
 // import { toast } from "@/components/ui/sonner";
 import api from "../../services/api";
 import { toast } from "sonner";
+import { useAuth } from "../../hooks/useAuth";
 
 const CreateJobForm = () => {
+  const { authState } = useAuth();
+
   const [formData, setFormData] = useState({
     title: "",
     details: "",
@@ -27,6 +38,9 @@ const CreateJobForm = () => {
   });
 
   const [loading, setLoading] = useState(false);
+
+  // const [reviewers, setReviewers] = useState([]);
+  // const [selectedReviewerId, setSelectedReviewerId] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,6 +77,35 @@ const CreateJobForm = () => {
         description: error.response?.data || "Something went wrong.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // const assignReviewer = async () => {
+  //   if (!selectedReviewerId) return;
+
+  //   const res = await api.post(`Applications/${applicationId}/reviewers`, {
+  //     reviewerId: selectedReviewerId,
+  //   });
+
+  //   if (res.status == 200) {
+  //     getApplicationReviewers();
+  //     setReviewers([]);
+  //     getReviewerList();
+  //     alert("Reviewer Added");
+  //   }
+  // };
+
+  const getReviewerList = async () => {
+    // fetching list of reviweres
+    try {
+      if (!authState.employeeRoles.includes("Recruiter")) return;
+      const res = await api.get(`/Recruiters/employees/${applicationId}`);
+      // console.log("change this");
+      setReviewers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
     } finally {
       setLoading(false);
     }
@@ -169,6 +212,34 @@ const CreateJobForm = () => {
                 onChange={handleChange}
               />
             </div>
+
+            {/* {authState.employeeRoles.includes("Recruiter") && (
+              <>
+                <div className="mt-5 space-y-2">
+                  <Select onValueChange={setSelectedReviewerId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Reviewer" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      {reviewers.map((r) => (
+                        <SelectItem key={r.key} value={r.key}>
+                          {r.value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    onClick={assignReviewer}
+                    className="w-full"
+                    disabled={!selectedReviewerId}
+                  >
+                    Assign Reviewer
+                  </Button>
+                </div>
+              </>
+            )} */}
 
             <CardFooter className="p-0 pt-4">
               <Button type="submit" disabled={loading} className="w-full">

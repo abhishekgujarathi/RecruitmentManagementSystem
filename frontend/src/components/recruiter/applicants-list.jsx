@@ -1,10 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import ApplicantsTable from "./ApplicantsTable";
 import api from "@/services/api";
 import { useAuth } from "../../hooks/useAuth";
+
+const STAGES = [
+  "Applied",
+  "UnderReview",
+  "Shortlisted",
+  "TestScheduled",
+  "TestPassed",
+  "InterviewScheduled",
+  "InterviewCompleted",
+  "Rejected",
+  "Hired",
+  "OnHold",
+];
+
+const TO_STAGE = [
+  { value: "UnderReview", name: "Under Review" },
+  { value: "Shortlisted", name: "Shortlisted" },
+  { value: "TestScheduled", name: "Test Scheduled" },
+  { value: "TestPassed", name: "Test Passed" },
+  { value: "InterviewScheduled", name: "Interview Scheduled" },
+  { value: "InterviewCompleted", name: "Interview Passed" },
+  { value: "Hired", name: "Hired" },
+  { value: "OnHold", name: "On Hold" },
+];
 
 const JobApplicantsList = () => {
   const { jobId } = useParams();
@@ -13,21 +35,35 @@ const JobApplicantsList = () => {
 
   const { authState } = useAuth();
 
-  useEffect(() => {
-    if (!authState?.employeeRoles || !authState.employeeRoles) return;
+  // get list of alll applicants
+  const fetchApplicants = async () => {
+    try {
+      const response = await api.get(`Applications/jobs/${jobId}`);
+      setApplicants(response.data);
+    } catch (error) {
+      console.error("Failed to fetch applicants:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchApplicants = async () => {
-      try {
-        console.log("fetching");
-        const response = await api.get(`Applications/jobs/${jobId}`);
-        setApplicants(response.data);
-        console.log("applicants list -", response.data);
-      } catch (error) {
-        console.error("Failed to fetch applicants:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // handle bulk or single status change per table
+  const handleStatusChange = async (appIds, newStatus) => {
+    try {
+      await api.patch(`Applications/bulk/status`, {
+        applicationIds: appIds,
+        newStatus: newStatus,
+        note: newStatus === "OnHold" ? "no notes " : null,
+      });
+
+      await fetchApplicants();
+    } catch (error) {
+      console.error("Failed to update statuses:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!authState?.employeeRoles?.includes("Recruiter")) return;
 
     fetchApplicants();
   }, [jobId, authState]);
@@ -43,54 +79,37 @@ const JobApplicantsList = () => {
     return <div className="text-center py-10">Loading applicants...</div>;
   }
 
+  if (applicants.length === 0) {
+    return (
+      <p className="text-center text-muted-foreground py-10">
+        No applicants yet for this job.
+      </p>
+    );
+  }
+
   return (
-    <section>
-      <div className="container px-0 md:px-4">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-3 mb-6">
-            <h1 className="text-2xl font-semibold">Applicants</h1>
+    <div className="px-4 space-y-8">
+      {STAGES.map((stage) => {
+        const stageApplicants = applicants.filter(
+          (a) => a.currentStatus === stage
+        );
+
+        // return nothin if there are no candidate on that stage
+        if (stageApplicants.length === 0) return <></>;
+
+        const nextStage = TO_STAGE[STAGES.indexOf(stage)];
+        return (
+          <div key={stage}>
+            <h2 className="text-xl font-semibold mb-2">{stage}</h2>
+            <ApplicantsTable
+              applicants={stageApplicants}
+              nextStage={nextStage}
+              onBulkStatusChange={handleStatusChange}
+            />
           </div>
-
-          {applicants.length === 0 ? (
-            <p className="text-center text-muted-foreground py-10">
-              No applicants yet for this job.
-            </p>
-          ) : (
-            applicants.map((applicant) => (
-              <React.Fragment key={applicant.jobApplicationId}>
-                <div className="grid items-center gap-4 px-4 py-5 md:grid-cols-6">
-                  <div className="col-span-2 flex flex-col gap-1">
-                    <h2 className="font-semibold text-lg">
-                      {applicant.candidateName}
-                    </h2>
-                    <p className="text-muted-foreground text-sm">
-                      {applicant.email}
-                    </p>
-                  </div>
-
-                  <p className="text-sm md:col-span-2">
-                    Applied on:{" "}
-                    {new Date(applicant.applicationDate).toLocaleDateString()}
-                  </p>
-
-                  <p className="text-sm font-medium capitalize">
-                    Status: {applicant.currentStatus}
-                  </p>
-                  <Button asChild>
-                    <a
-                      href={`/employee/applications/${applicant.applicationId}`}
-                    >
-                      View Profile
-                    </a>
-                  </Button>
-                </div>
-                <Separator />
-              </React.Fragment>
-            ))
-          )}
-        </div>
-      </div>
-    </section>
+        );
+      })}
+    </div>
   );
 };
 

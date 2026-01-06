@@ -38,6 +38,7 @@ namespace RecruitmentManagementSystem.API.Data
 
 
         // --- review ---
+        // public DbSet<JobReviewer> JobReviewers { get; set; }
         public DbSet<AssignedReviewer> AssignedReviewers { get; set; }
         public DbSet<ApplicationSkill> ApplicationSkills { get; set; }
         public DbSet<ReviewComment> ReviewComments { get; set; }

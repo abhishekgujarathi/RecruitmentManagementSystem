@@ -20,7 +20,7 @@ const ReviewSection = ({ disabled, applicationId }) => {
 
   useEffect(() => {
     fetchComments();
-  }, [applicationId]);
+  }, []);
 
   // tmp id making
   const generateTempId = () => `temp-${Date.now()}-${Math.random()}`;
@@ -84,7 +84,6 @@ const ReviewSection = ({ disabled, applicationId }) => {
   return (
     <Card className="px-4 border-none">
       <h3 className="font-semibold text-lg">Review Comments</h3>
-      {console.log(disabled)}
       <div className="space-y-2">
         {comments.map((c) => {
           const commentId = c.reviewCommentId || c.tempId;

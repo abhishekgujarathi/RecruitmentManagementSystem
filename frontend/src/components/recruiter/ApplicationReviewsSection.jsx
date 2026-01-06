@@ -8,7 +8,7 @@ export default function ApplicationReviewsSection({ applicationId }) {
   const fetchReviews = async () => {
     const res = await api.get(`Applications/${applicationId}/reviews/all`);
     setReviews(res.data);
-    console.log(res.data);
+    console.log("reviewslist recruiter -", res.data);
   };
 
   useEffect(() => {
