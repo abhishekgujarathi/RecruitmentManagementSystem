@@ -6,6 +6,7 @@ using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.DTOS.Request;
 using RecruitmentManagementSystem.API.DTOS.Response;
 using RecruitmentManagementSystem.API.Models;
+using System;
 
 namespace RecruitmentManagementSystem.API.Services
 {
@@ -650,14 +651,47 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
 
+            // updating status of application
             application.CurrentStatus = newStatus;
             application.StatusUpdatedAt = DateTime.UtcNow;
 
+            // note
             if (newStatus == ApplicationStatus.OnHold)
                 application.StatusNote = dto.Note;
             else
                 application.StatusNote = null;
 
+
+            // inserting interview rounds for application from default job rounds
+            if (newStatus == ApplicationStatus.InterviewInProgress)
+            {
+                // reuse above jobid
+                var jobId = application.JobId;
+                var intrwRounds = await _context.JobInterviewRounds
+                    .Where(ir => ir.JobId == jobId)
+                    .ToListAsync();
+
+                // check if already interview rounds are applied if applied dont apply
+                if (!_context.ApplicationInterviewRounds.Any(a => a.JobApplicationId == applicationId))
+                {
+                    foreach (var ir in intrwRounds)
+                    {
+                        _context.ApplicationInterviewRounds.Add(
+                            new ApplicationInterviewRound
+                            {
+                                ApplicationInterviewRoundId = Guid.NewGuid(),
+                                JobApplicationId = applicationId,
+                                RoundNumber = ir.RoundNumber,
+                                RoundType = ir.RoundType,
+                                Status = InterviewRoundStatus.Pending
+                            }
+                        );
+                    }
+                }
+            }
+
+
+            // atlast savin changes
             await _context.SaveChangesAsync();
         }
 
@@ -704,7 +738,7 @@ namespace RecruitmentManagementSystem.API.Services
                             continue;
                     }
 
-                    // if test passed
+                    // if test passed and test scheduled then move forward otherwise skip whole application
                     if (newStatus == ApplicationStatus.TestPassed &&
                         currentStatus != ApplicationStatus.TestScheduled)
                         continue;
@@ -722,6 +756,37 @@ namespace RecruitmentManagementSystem.API.Services
                         application.StatusNote = note;
                     else
                         application.StatusNote = null;
+
+
+                    // inserting interview rounds for application from default job rounds
+                    if (newStatus == ApplicationStatus.InterviewInProgress)
+                    {
+                        // reuse above jobid
+                        var jobId = application.JobId;
+                        var intrwRounds = await _context.JobInterviewRounds
+                            .Where(ir => ir.JobId == jobId)
+                            .ToListAsync();
+
+                        // check if already interview rounds are applied if applied dont apply
+                        if (!_context.ApplicationInterviewRounds.Any(a => a.JobApplicationId == application.JobApplicationId))
+                        {
+                            foreach (var ir in intrwRounds)
+                            {
+                                _context.ApplicationInterviewRounds.Add(
+                                    new ApplicationInterviewRound
+                                    {
+                                        ApplicationInterviewRoundId = Guid.NewGuid(),
+                                        JobApplicationId = application.JobApplicationId,
+                                        RoundNumber = ir.RoundNumber,
+                                        RoundType = ir.RoundType,
+                                        Status = InterviewRoundStatus.Pending
+                                    }
+                                );
+
+                                // saved at last of method
+                            }
+                        }
+                    }
                 }
                 catch
                 {

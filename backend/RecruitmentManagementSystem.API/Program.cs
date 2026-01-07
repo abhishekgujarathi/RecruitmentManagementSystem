@@ -67,6 +67,7 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IJobsService, JobsService>();
 builder.Services.AddScoped<ISkillsService, SkillsService>();
 builder.Services.AddScoped<IApplicationsService, ApplicationsService>();
+builder.Services.AddScoped<IInterviewService, InterviewService>();
 
 
 var app = builder.Build();

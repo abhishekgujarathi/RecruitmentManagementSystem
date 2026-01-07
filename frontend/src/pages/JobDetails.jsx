@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 
 import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import JobApplicantsList from "../components/recruiter/applicants-list";
+import JobInterviewRoundsSection from "../components/recruiter/JobInterviewRoundsSection";
 
 const JobDetail = () => {
   const { jobId } = useParams();
@@ -181,7 +182,14 @@ const JobDetail = () => {
           </Card>
         </div>
       </div>
-      {console.log(isLoggedIn, role, role.includes("Recruiter"))}
+
+      {/* job interview rounds */}
+      <div className="container py-4 mt-8 border">
+        {isLoggedIn && employeeRoles.includes("Recruiter") && (
+          <JobInterviewRoundsSection jobId={jobId} />
+        )}
+      </div>
+
       <div className="container py-4 mt-8 border">
         {isLoggedIn && employeeRoles.includes("Recruiter") && (
           <JobApplicantsList jobId={jobId} />

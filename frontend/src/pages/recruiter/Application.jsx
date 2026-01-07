@@ -19,6 +19,7 @@ import SkillReviewSection from "../../components/reviewer/SkillReviewSection";
 import ApplicationReviewSection from "../../components/recruiter/ApplicationReviewsSection";
 import { toast } from "sonner";
 import ChangeStatusButton from "../../components/recruiter/ChangeStatusButton";
+import ApplicationInterviewSection from "../../components/recruiter/ApplicationInterviewSection";
 
 const Application = () => {
   const { applicationId } = useParams();
@@ -262,6 +263,11 @@ const Application = () => {
                 </div>
               </div>
             </>
+          )}
+
+          {/* interview round and management */}
+          {authState.employeeRoles.includes("Recruiter") && (
+            <ApplicationInterviewSection applicationId={applicationId} />
           )}
         </CardContent>
       </Card>

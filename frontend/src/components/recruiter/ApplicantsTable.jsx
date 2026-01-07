@@ -51,7 +51,7 @@ export default function ApplicantsTable({
 
     setSelected([]);
   };
-  
+
   const disabled = !(nextStage && selected.length > 0);
 
   return (
