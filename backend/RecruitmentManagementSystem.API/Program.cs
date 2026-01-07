@@ -69,10 +69,19 @@ builder.Services.AddScoped<ISkillsService, SkillsService>();
 builder.Services.AddScoped<IApplicationsService, ApplicationsService>();
 
 
-
-
-
 var app = builder.Build();
+
+
+
+/// code to run DBSeeder.cs
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbSeeder.SeedAsync(db);
+}
+
+/// code to run DBSeeder.cs
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

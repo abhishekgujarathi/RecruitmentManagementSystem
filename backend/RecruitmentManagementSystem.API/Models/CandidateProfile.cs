@@ -37,5 +37,9 @@ namespace RecruitmentManagementSystem.API.Models
         public virtual ICollection<Experience> Experiences { get; set; }
         public virtual ICollection<CandidateSkill> CandidateSkills { get; set; }
         public virtual ICollection<CVStorage> CVStorages { get; set; }
+
+
+        // adding to reference candidates applications directly
+        public virtual ICollection<JobApplication> Applications { get; set; }
     }
 }
