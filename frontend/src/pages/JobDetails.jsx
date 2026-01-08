@@ -63,6 +63,7 @@ const JobDetail = () => {
     try {
       await api.post(`/Applications/jobs/${jobId}`);
       toast.success("Applied successfully!");
+      setJob((prev) => ({ ...prev, isApplied: true }));
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to apply.");
     }

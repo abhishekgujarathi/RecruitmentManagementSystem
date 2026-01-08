@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import api from "../../services/api";
 
+// shown only to recruiter
 export default function ApplicationReviewsSection({ applicationId }) {
   const [reviews, setReviews] = useState([]);
 
@@ -26,19 +28,19 @@ export default function ApplicationReviewsSection({ applicationId }) {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="m-0">
+      <CardHeader className="">
         <CardTitle className="text-base">Reviews</CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="text-sm">
         {reviews.map((review) => (
-          <Card key={review.userId}>
+          <Card className="border shadow-none" key={review.userId}>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">{review.userName}</CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-2 text-sm">
+            <CardContent className="text-sm">
               {!review.skills.length > 0 ? (
                 <div className="p-2">No Skill Reviews Yet</div>
               ) : (
@@ -89,6 +91,7 @@ export default function ApplicationReviewsSection({ applicationId }) {
                       </div>
                     ))}
                   </div>
+                  <Separator />
                 </div>
               )}
             </CardContent>

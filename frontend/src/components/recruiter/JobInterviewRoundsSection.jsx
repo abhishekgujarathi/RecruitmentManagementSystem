@@ -21,7 +21,10 @@ const JobInterviewRoundsSection = ({ jobId }) => {
     try {
       const res = await api.get(`/Interview/jobs/${jobId}`);
       console.log(res.data);
-      setInterviewRounds(res.data);
+      const sortedRounds = res.data.sort(
+        (a, b) => a.roundNumber - b.roundNumber
+      );
+      setInterviewRounds(sortedRounds);
     } catch (err) {
       console.log("error in job rounds", err);
       toast.error("Loading Job Rounds Error");

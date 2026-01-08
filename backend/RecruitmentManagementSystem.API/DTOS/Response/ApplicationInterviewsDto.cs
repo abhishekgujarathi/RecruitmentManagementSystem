@@ -10,8 +10,8 @@ namespace RecruitmentManagementSystem.API.DTOS.Response
         public int RoundNumber { get; set; }
         public string RoundType { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-
-        //public List<InterviewPanelMemberDto> PanelMembers { get; set; } = [];
+        public DateTime? ScheduledAt { get; set; }
+        public List<InterviewPanelMemberDto> PanelMembers { get; set; } = [];
 
     }
 }

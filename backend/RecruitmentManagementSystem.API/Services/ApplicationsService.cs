@@ -501,7 +501,7 @@ namespace RecruitmentManagementSystem.API.Services
             // filter out all old reviews
             var incomingIds = comments
                 .Where(c => c.ReviewCommentId.HasValue)
-                .Select(c => c.ReviewCommentId!.Value)
+                .Select(c => c.ReviewCommentId.Value)
                 .ToHashSet();
 
             // existing - incoming are delete

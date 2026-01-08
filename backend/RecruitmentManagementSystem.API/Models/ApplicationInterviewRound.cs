@@ -16,9 +16,9 @@ namespace RecruitmentManagementSystem.API.Models
         public JobApplication JobApplication { get; set; } = default!;
 
         public int RoundNumber { get; set; }
-        public string RoundType { get; set; } 
+        public string RoundType { get; set; }
 
-        public DateTime? ScheduledAt { get; set; }
+        public DateTime? ScheduledAt { get; set; } = null;
 
         public string Status { get; set; } = InterviewRoundStatus.Pending;
         public string? MeetLink { get; set; }

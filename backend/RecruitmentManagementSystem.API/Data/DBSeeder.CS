@@ -70,13 +70,13 @@ namespace RecruitmentManagementSystem.API.Data
             var jd3Id = Guid.Parse("ffffffff-6666-4666-9666-ffffffffffff");
             var jd4Id = Guid.Parse("11111111-7777-4777-9777-111111111112");
 
-            // Job ids (these were fixed in your OnModelCreating)
+            // Job ids
             var job1Id = Guid.Parse("A83A2E30-7D33-4829-BF86-E9CCE7462B53");
             var job2Id = Guid.Parse("AF6B7D6B-2128-4E5F-8804-D5209A38E443");
             var job3Id = Guid.Parse("F9651A24-9357-4AF0-A9F0-96F5736E8EB6");
             var job4Id = Guid.Parse("15697654-2E8E-412B-B35E-8226CF911237");
 
-            // JobInterviewRound ids (deterministic here)
+            // JobInterviewRound ids
             var intr1 = Guid.Parse("22222222-aaaa-4aa1-8aaa-222222222222");
             var intr2 = Guid.Parse("33333333-bbbb-4bb2-8bbb-333333333333");
             var intr3 = Guid.Parse("44444444-cccc-4cc3-8ccc-444444444444");
@@ -682,7 +682,16 @@ namespace RecruitmentManagementSystem.API.Data
                     db.JobInterviewRounds.AddRange(
                         new JobInterviewRound { JobInterviewRoundId = intr1, JobId = job1Id, RoundNumber = 1, RoundType = InterviewRoundType.Technical },
                         new JobInterviewRound { JobInterviewRoundId = intr2, JobId = job1Id, RoundNumber = 2, RoundType = InterviewRoundType.Technical },
-                        new JobInterviewRound { JobInterviewRoundId = intr3, JobId = job1Id, RoundNumber = 3, RoundType = InterviewRoundType.HR }
+                        new JobInterviewRound { JobInterviewRoundId = intr3, JobId = job1Id, RoundNumber = 3, RoundType = InterviewRoundType.HR },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job2Id, RoundNumber = 1, RoundType = InterviewRoundType.Technical },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job2Id, RoundNumber = 2, RoundType = InterviewRoundType.Technical },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job2Id, RoundNumber = 3, RoundType = InterviewRoundType.HR },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job3Id, RoundNumber = 1, RoundType = InterviewRoundType.Technical },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job3Id, RoundNumber = 2, RoundType = InterviewRoundType.Technical },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job3Id, RoundNumber = 3, RoundType = InterviewRoundType.HR },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job4Id, RoundNumber = 1, RoundType = InterviewRoundType.Technical },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job4Id, RoundNumber = 2, RoundType = InterviewRoundType.Technical },
+                        new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job4Id, RoundNumber = 3, RoundType = InterviewRoundType.HR }
                     );
                     await db.SaveChangesAsync();
                 }
