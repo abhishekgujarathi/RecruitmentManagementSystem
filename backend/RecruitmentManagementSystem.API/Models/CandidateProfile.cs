@@ -9,7 +9,7 @@ using System.Net;
 namespace RecruitmentManagementSystem.API.Models
 {
     public class CandidateProfile
-    //CandidateProfile(CPid, Uid, address, city, state, country, postalCode) , pk[CPid], fk[Uid]
+    //CandidateProfile(CPid, ReviewerUserId, address, city, state, country, postalCode) , pk[CPid], fk[ReviewerUserId]
 
     {
         [Key]
@@ -37,5 +37,9 @@ namespace RecruitmentManagementSystem.API.Models
         public virtual ICollection<Experience> Experiences { get; set; }
         public virtual ICollection<CandidateSkill> CandidateSkills { get; set; }
         public virtual ICollection<CVStorage> CVStorages { get; set; }
+
+
+        // adding to reference candidates applications directly
+        public virtual ICollection<JobApplication> Applications { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RecruitmentManagementSystem.API.Data;
 
@@ -11,9 +12,11 @@ using RecruitmentManagementSystem.API.Data;
 namespace RecruitmentManagementSystem.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260106231220_remove all seed data")]
+    partial class removeallseeddata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -562,23 +565,6 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasKey("JobTypeId");
 
                     b.ToTable("JobTypes");
-
-                    b.HasData(
-                        new
-                        {
-                            JobTypeId = new Guid("56b52f5c-4231-4c97-ab5f-d614b0276a97"),
-                            TypeName = "Full-Time"
-                        },
-                        new
-                        {
-                            JobTypeId = new Guid("2dcae4ce-edc0-4e8c-8250-addb75ed4b4b"),
-                            TypeName = "Part-Time"
-                        },
-                        new
-                        {
-                            JobTypeId = new Guid("57832921-0cd2-4ef1-92e9-e59371e5a210"),
-                            TypeName = "Contract"
-                        });
                 });
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.ReviewComment", b =>
@@ -643,33 +629,6 @@ namespace RecruitmentManagementSystem.API.Migrations
                         .HasFilter("[Name] IS NOT NULL");
 
                     b.ToTable("SocialPlatforms");
-
-                    b.HasData(
-                        new
-                        {
-                            SocialPlatformId = new Guid("d88d5ddb-e422-465c-b7ce-c1da88f187af"),
-                            Name = "LinkedIn"
-                        },
-                        new
-                        {
-                            SocialPlatformId = new Guid("bb043454-9cf5-4ca0-840f-93a1ffc758fb"),
-                            Name = "GitHub"
-                        },
-                        new
-                        {
-                            SocialPlatformId = new Guid("5f220026-119d-49b0-bc3d-973a222b7776"),
-                            Name = "Portfolio"
-                        },
-                        new
-                        {
-                            SocialPlatformId = new Guid("adfc092e-ec21-46d2-81ba-b1d5fad53fb5"),
-                            Name = "Twitter"
-                        },
-                        new
-                        {
-                            SocialPlatformId = new Guid("59819938-51e9-45f6-8b09-4e48f524f33b"),
-                            Name = "Stack Overflow"
-                        });
                 });
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.User", b =>
@@ -771,7 +730,7 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasOne("RecruitmentManagementSystem.API.Models.Skill", "Skill")
                         .WithMany()
                         .HasForeignKey("SkillId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("JobApplication");
@@ -946,15 +905,15 @@ namespace RecruitmentManagementSystem.API.Migrations
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobApplication", b =>
                 {
                     b.HasOne("RecruitmentManagementSystem.API.Models.CandidateProfile", "CandidateProfile")
-                        .WithMany("Applications")
+                        .WithMany()
                         .HasForeignKey("CandidateProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("RecruitmentManagementSystem.API.Models.Job", "Job")
                         .WithMany("Applications")
                         .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("CandidateProfile");
@@ -1040,8 +999,6 @@ namespace RecruitmentManagementSystem.API.Migrations
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.CandidateProfile", b =>
                 {
-                    b.Navigation("Applications");
-
                     b.Navigation("CVStorages");
 
                     b.Navigation("CandidateSkills");

@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import api from "../../services/api";
 
+// shown only to recruiter
 export default function ApplicationReviewsSection({ applicationId }) {
   const [reviews, setReviews] = useState([]);
 
   const fetchReviews = async () => {
     const res = await api.get(`Applications/${applicationId}/reviews/all`);
     setReviews(res.data);
-    console.log(res.data);
+    console.log("reviewslist recruiter -", res.data);
   };
 
   useEffect(() => {
     fetchReviews();
   }, [applicationId]);
 
-  if (!reviews.length) {
+  if (reviews.length == 0) {
     return (
       <Card>
         <CardContent className="text-sm text-muted-foreground">
@@ -26,20 +28,22 @@ export default function ApplicationReviewsSection({ applicationId }) {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="m-0">
+      <CardHeader className="">
         <CardTitle className="text-base">Reviews</CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="text-sm">
         {reviews.map((review) => (
-          <Card key={review.userId}>
+          <Card className="border shadow-none" key={review.userId}>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">{review.userName}</CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-4 text-sm">
-              {review.skills.length > 0 && (
+            <CardContent className="text-sm">
+              {!review.skills.length > 0 ? (
+                <div className="p-2">No Skill Reviews Yet</div>
+              ) : (
                 <div>
                   <div className="font-medium mb-2">Skills</div>
 
@@ -67,7 +71,9 @@ export default function ApplicationReviewsSection({ applicationId }) {
               )}
 
               {/* review comment */}
-              {review.comments.length > 0 && (
+              {!review.comments.length > 0 ? (
+                <div className="p-2">No Review Comments Yet</div>
+              ) : (
                 <div>
                   <div className="font-black mb-2">Comments</div>
 
@@ -85,6 +91,7 @@ export default function ApplicationReviewsSection({ applicationId }) {
                       </div>
                     ))}
                   </div>
+                  <Separator />
                 </div>
               )}
             </CardContent>

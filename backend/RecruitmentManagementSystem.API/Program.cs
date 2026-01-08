@@ -67,12 +67,22 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IJobsService, JobsService>();
 builder.Services.AddScoped<ISkillsService, SkillsService>();
 builder.Services.AddScoped<IApplicationsService, ApplicationsService>();
-
-
-
+builder.Services.AddScoped<IInterviewService, InterviewService>();
 
 
 var app = builder.Build();
+
+
+
+/// code to run DBSeeder.cs
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbSeeder.SeedAsync(db);
+}
+
+/// code to run DBSeeder.cs
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

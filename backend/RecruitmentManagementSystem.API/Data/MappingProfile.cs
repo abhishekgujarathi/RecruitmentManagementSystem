@@ -72,5 +72,17 @@ public class MappingProfile : Profile
         //.ForMember(dest => dest.SkillId, opt => opt.MapFrom(src => src.SkillId));
         // --- recruiter ---
 
+
+
+        // --- interview ---
+        CreateMap<JobInterviewRound, JobInterviewsDto>();
+        CreateMap<ApplicationInterviewRound, ApplicationInterviewsDto>();
+
+        CreateMap<InterviewPanelMember, InterviewPanelMemberDto>()
+            .ForMember(
+                d => d.InterviewerName,
+                o => o.MapFrom(s => s.Interviewer.Fname + " " + s.Interviewer.Lname)
+            );
+        // --- interview ---
     }
 }

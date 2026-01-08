@@ -37,6 +37,15 @@ namespace RecruitmentManagementSystem.API.Models
         // deadline_date
         public required DateTime DeadlineDate { get; set; }
 
+
+        // for checking on ui to assign and default 
+        public bool DefaultReviewersAssigned { get; set; } = false;
+
+        // for checking on ui to assign default 
+        // JobInterviewRound
+        public bool DefaultInterviewRoundsDefined { get; set; } = false;
+        
+
         // nav prop
         public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
     }

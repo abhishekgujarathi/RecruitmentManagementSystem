@@ -190,7 +190,7 @@ namespace RecruitmentManagementSystem.API.Controllers
         }
 
 
-        //GET /api/applications/{id}/reviews
+        //GET /api/applications/{id}/reviews/all
         [Authorize(Roles = "Recruiter")]
         [HttpGet("{applicationId}/reviews/all")]
         public async Task<IActionResult> GetAllReviews(Guid applicationId)
@@ -263,20 +263,43 @@ namespace RecruitmentManagementSystem.API.Controllers
         [HttpPatch("{applicationId}/status")]
         public async Task<IActionResult> UpdateApplicationStatus(Guid applicationId, [FromBody] UpdateApplicationStatusDto request)
         {
-            Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value,out Guid recruiterId);
+            Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out Guid recruiterId);
 
             try
             {
                 await _applicationsService.UpdateApplicationStatusAsync(applicationId, recruiterId, request);
                 return Ok();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                return BadRequest("Unable to update application status. "+ e.Message.ToString());
+                return BadRequest("Unable to update application status. " + e.Message.ToString());
 
             }
         }
 
+
+        //PATCH /api/applications/bulk/status
+        [Authorize(Roles = "Recruiter")]
+        [HttpPatch("bulk/status")]
+        public async Task<IActionResult> UpdateBulkApplicationStatus([FromBody] UpdateBulkApplicationStatusDto request)
+        {
+            Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out Guid recruiterId);
+            try
+            {
+                await _applicationsService.UpdateBulkApplicationStatusAsync(
+                    request.ApplicationIds,
+                    recruiterId,
+                    request.NewStatus,
+                    request.Note
+                );
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                return BadRequest("Unable to update application statuses. " + e.Message);
+            }
+        }
 
     }
 }

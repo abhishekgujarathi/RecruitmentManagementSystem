@@ -6,6 +6,7 @@ using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.DTOS.Request;
 using RecruitmentManagementSystem.API.DTOS.Response;
 using RecruitmentManagementSystem.API.Models;
+using System;
 
 namespace RecruitmentManagementSystem.API.Services
 {
@@ -59,6 +60,9 @@ namespace RecruitmentManagementSystem.API.Services
         Task<AssignedReviewer> GetAssignedReviewerAsync(Guid applicationId, Guid reviewerId);
         // finnally submit review
         Task SubmitReviewAsync(Guid applicationId, Guid reviewerId);
+
+        // for bulk status changes
+        Task<bool> UpdateBulkApplicationStatusAsync(List<Guid> applicationIds, Guid recruiterId, string newStatus, string note = null);
     }
     public class ApplicationsService : IApplicationsService
     {
@@ -83,7 +87,7 @@ namespace RecruitmentManagementSystem.API.Services
                 .Include(a => a.CandidateProfile)
                     .ThenInclude(cp => cp.User)
                 .Include(a => a.AssignedReviewers)
-                .Where(a => a.AssignedReviewers.Any(ar => ar.Uid == reviewerId))
+                .Where(a => a.AssignedReviewers.Any(ar => ar.ReviewerUserId == reviewerId))
                 .Select(a => new JobApplicationDto
                 {
                     JobApplicationId = a.JobApplicationId,
@@ -91,7 +95,9 @@ namespace RecruitmentManagementSystem.API.Services
                     ApplicationDate = a.ApplicationDate,
                     CurrentStatus = a.CurrentStatus,
                     CandidateProfileId = a.CandidateProfileId,
-                    ApplicationId = a.JobApplicationId
+                    ApplicationId = a.JobApplicationId,
+                    StatusUpdatedAt = a.StatusUpdatedAt
+
                 })
                 .ToListAsync();
 
@@ -101,7 +107,7 @@ namespace RecruitmentManagementSystem.API.Services
         }
 
 
-        // check-applications
+        // get all applications on job
         public async Task<IEnumerable<JobApplicationDto>> GetJobApplicationsAsync(Guid jobId)
         {
             var job = await _context.Jobs
@@ -121,7 +127,8 @@ namespace RecruitmentManagementSystem.API.Services
                     ApplicationDate = a.ApplicationDate,
                     CurrentStatus = a.CurrentStatus,
                     CandidateProfileId = a.CandidateProfileId,
-                    ApplicationId = a.JobApplicationId
+                    ApplicationId = a.JobApplicationId,
+                    StatusUpdatedAt = a.StatusUpdatedAt
                 })
                 .ToListAsync();
 
@@ -188,7 +195,7 @@ namespace RecruitmentManagementSystem.API.Services
 
             var result = reviewers.Select(ar => new ReviewerDto
             {
-                ReviewerId = ar.Uid,
+                ReviewerId = ar.ReviewerUserId,
                 Name = $"{ar.Reviewer.Fname} {ar.Reviewer.Lname}",
                 AssignedDate = ar.AssignedDate,
                 Status = ar.IsReviewCompleted ? "Completed" : "Pending",
@@ -232,11 +239,16 @@ namespace RecruitmentManagementSystem.API.Services
             {
                 AssignedReviewersId = Guid.NewGuid(),
                 JobApplicationId = applicationId,
-                Uid = reviewerId,
+                ReviewerUserId = reviewerId,
                 AssignedByUid = assignedById,
                 AssignedDate = DateTime.UtcNow,
                 isActive = true
             };
+
+            var application = await _context.JobApplications.FirstOrDefaultAsync(ja => ja.JobApplicationId == applicationId);
+
+            application.CurrentStatus = ApplicationStatus.UnderReview;
+            application.StatusUpdatedAt = DateTime.UtcNow;
 
             _context.AssignedReviewers.Add(assignment);
             await _context.SaveChangesAsync();
@@ -264,6 +276,8 @@ namespace RecruitmentManagementSystem.API.Services
             if (alreadyApplied)
                 throw new Exception("Already applied to this job.");
 
+            // var jobReviewers = await _context.JobReviewers.Where(jr => jr.JobId == jobId).ToListAsync();
+
             // make new job application
             var newApplication = new JobApplication
             {
@@ -271,8 +285,25 @@ namespace RecruitmentManagementSystem.API.Services
                 CandidateProfileId = candidateProfile.CandidateProfileId,
                 JobId = jobId,
                 ApplicationDate = DateTime.UtcNow,
-                CurrentStatus = ApplicationStatus.Applied
+                CurrentStatus = ApplicationStatus.Applied,
+                //AssignedReviewers = jobReviewers
             };
+
+            // mapping each alrdy assigned reviewer to position to application
+            //foreach (var jr in jobReviewers)
+            //{
+            //    newApplication.AssignedReviewers.Add(new AssignedReviewer
+            //    {
+            //        AssignedReviewersId = Guid.NewGuid(),
+            //        JobApplicationId = newApplication.JobApplicationId,
+            //        ReviewerUserId = jr.ReviewerId,
+            //        AssignedDate = DateTime.UtcNow,
+            //        AssignedByUid = jr.AssignedBy,
+            //        isActive = true
+            //    });
+            //}
+
+
 
             // saving commiting
             _context.JobApplications.Add(newApplication);
@@ -293,7 +324,7 @@ namespace RecruitmentManagementSystem.API.Services
             // check if user is actually assigned
             var isAssigned = await _context.AssignedReviewers
                 .AnyAsync(ar => ar.JobApplicationId == applicationId
-                                && ar.Uid == userId
+                                && ar.ReviewerUserId == userId
                                 && ar.isActive);
 
             if (!isAssigned)
@@ -326,7 +357,7 @@ namespace RecruitmentManagementSystem.API.Services
             // check if reviewer is assigned and active
             var isAssigned = await _context.AssignedReviewers
                 .AnyAsync(ar => ar.JobApplicationId == applicationId
-                                && ar.Uid == reviewerId
+                                && ar.ReviewerUserId == reviewerId
                                 && ar.isActive);
 
             if (!isAssigned)
@@ -372,7 +403,7 @@ namespace RecruitmentManagementSystem.API.Services
                 .Include(ar => ar.Reviewer)
                 .Where(ar => ar.JobApplicationId == applicationId && ar.isActive)
                 .ToListAsync();
-            var reviewerIds = reviewers.Select(r => r.Uid).ToList();
+            var reviewerIds = reviewers.Select(r => r.ReviewerUserId).ToList();
 
             // getting there review comments
             var comments = await _context.ReviewComments
@@ -388,8 +419,9 @@ namespace RecruitmentManagementSystem.API.Services
                 })
                 .ToListAsync();
 
-
             // gettin there skill reviews
+
+
             var skills = await _context.ApplicationSkills
                 .Where(s => s.JobApplicationId == applicationId &&
                             reviewerIds.Contains(s.ReviewerId)
@@ -409,13 +441,13 @@ namespace RecruitmentManagementSystem.API.Services
             var result = reviewers
                 .Select(r => new RecruiterReviewDto
                 {
-                    UserId = r.Uid,
+                    UserId = r.ReviewerUserId,
                     UserName = r.Reviewer.Fname + " " + r.Reviewer.Lname,
                     Comments = comments
-                        .Where(c => c.CommentedByUid == r.Uid)
+                        .Where(c => c.CommentedByUid == r.ReviewerUserId)
                         .ToList(),
                     Skills = skills
-                        .Where(s => s.ReviewerId == r.Uid)
+                        .Where(s => s.ReviewerId == r.ReviewerUserId)
                         .ToList(),
                     ReviewCompleted = r.IsReviewCompleted
                 })
@@ -433,7 +465,7 @@ namespace RecruitmentManagementSystem.API.Services
                 .Include(c => c.CommentedBy)
                 .Where(c => c.JobApplicationId == applicationId
                             && c.CommentedByUid == userId
-                            && c.JobApplication.AssignedReviewers.Any(ar => ar.Uid == userId)) // used any as multiple navs
+                            && c.JobApplication.AssignedReviewers.Any(ar => ar.ReviewerUserId == userId)) // used any as multiple navs
                 .OrderByDescending(c => c.CommentDate)
                 .Select(c => new ReviewCommentDto
                 {
@@ -454,7 +486,7 @@ namespace RecruitmentManagementSystem.API.Services
             var assignedReviewer = await _context.AssignedReviewers
                 .FirstOrDefaultAsync(ar =>
                     ar.JobApplicationId == applicationId &&
-                    ar.Uid == userId &&
+                    ar.ReviewerUserId == userId &&
                     ar.isActive);
 
             if (assignedReviewer == null) return false;
@@ -469,7 +501,7 @@ namespace RecruitmentManagementSystem.API.Services
             // filter out all old reviews
             var incomingIds = comments
                 .Where(c => c.ReviewCommentId.HasValue)
-                .Select(c => c.ReviewCommentId!.Value)
+                .Select(c => c.ReviewCommentId.Value)
                 .ToHashSet();
 
             // existing - incoming are delete
@@ -517,7 +549,7 @@ namespace RecruitmentManagementSystem.API.Services
             var assignedReviewer = await _context.AssignedReviewers
                 .FirstOrDefaultAsync(ar =>
                     ar.JobApplicationId == applicationId &&
-                    ar.Uid == reviewerId &&
+                    ar.ReviewerUserId == reviewerId &&
                     ar.isActive);
 
             return assignedReviewer;
@@ -530,7 +562,7 @@ namespace RecruitmentManagementSystem.API.Services
             var assignedReviewer = await _context.AssignedReviewers
                 .FirstOrDefaultAsync(ar =>
                     ar.JobApplicationId == applicationId &&
-                    ar.Uid == reviewerId &&
+                    ar.ReviewerUserId == reviewerId &&
                     ar.isActive);
 
             if (assignedReviewer == null)
@@ -543,7 +575,7 @@ namespace RecruitmentManagementSystem.API.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateApplicationStatusAsync(Guid applicationId,Guid recruiterId,UpdateApplicationStatusDto dto)
+        public async Task UpdateApplicationStatusAsync(Guid applicationId, Guid recruiterId, UpdateApplicationStatusDto dto)
         {
             // ??? check for onHold - where to go from onHold?
 
@@ -601,7 +633,7 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
             // check for test
-            if (newStatus == ApplicationStatus.TestPassed  &&
+            if (newStatus == ApplicationStatus.TestPassed &&
                 currentStatus != ApplicationStatus.TestScheduled)
             {
                 throw new InvalidOperationException(
@@ -610,8 +642,8 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
             // check for interview
-            if (newStatus == ApplicationStatus.InterviewPassed &&
-                currentStatus != ApplicationStatus.InterviewScheduled)
+            if (newStatus == ApplicationStatus.InterviewCompleted &&
+                currentStatus != ApplicationStatus.InterviewInProgress)
             {
                 throw new InvalidOperationException(
                     "Interview must be scheduled before marking it as passed."
@@ -619,16 +651,154 @@ namespace RecruitmentManagementSystem.API.Services
             }
 
 
+            // updating status of application
             application.CurrentStatus = newStatus;
             application.StatusUpdatedAt = DateTime.UtcNow;
 
+            // note
             if (newStatus == ApplicationStatus.OnHold)
                 application.StatusNote = dto.Note;
             else
                 application.StatusNote = null;
 
+
+            // inserting interview rounds for application from default job rounds
+            if (newStatus == ApplicationStatus.InterviewInProgress)
+            {
+                // reuse above jobid
+                var jobId = application.JobId;
+                var intrwRounds = await _context.JobInterviewRounds
+                    .Where(ir => ir.JobId == jobId)
+                    .ToListAsync();
+
+                // check if already interview rounds are applied if applied dont apply
+                if (!_context.ApplicationInterviewRounds.Any(a => a.JobApplicationId == applicationId))
+                {
+                    foreach (var ir in intrwRounds)
+                    {
+                        _context.ApplicationInterviewRounds.Add(
+                            new ApplicationInterviewRound
+                            {
+                                ApplicationInterviewRoundId = Guid.NewGuid(),
+                                JobApplicationId = applicationId,
+                                RoundNumber = ir.RoundNumber,
+                                RoundType = ir.RoundType,
+                                Status = InterviewRoundStatus.Pending
+                            }
+                        );
+                    }
+                }
+            }
+
+
+            // atlast savin changes
             await _context.SaveChangesAsync();
         }
+
+        public async Task<bool> UpdateBulkApplicationStatusAsync(List<Guid> applicationIds, Guid recruiterId, string newStatus, string note = null)
+        {
+            // checking if new status 
+            if (string.IsNullOrWhiteSpace(newStatus))
+                throw new InvalidOperationException("New status is required.");
+
+            // checking i hold note there
+            if (newStatus == ApplicationStatus.OnHold && string.IsNullOrWhiteSpace(note))
+                throw new InvalidOperationException("OnHold status requires a note.");
+
+            // getting alll applications
+            var applications = await _context.JobApplications
+                .Include(a => a.Job)
+                .Include(a => a.AssignedReviewers)
+                .Where(a => applicationIds.Contains(a.JobApplicationId))
+                .ToListAsync();
+
+            var error = 0;
+            // loopin thru all applications
+            foreach (var application in applications)
+            {
+                try
+                {
+                    var currentStatus = application.CurrentStatus ?? ApplicationStatus.Applied;
+
+                    if (ApplicationStatus.FinalStatuses.Contains(currentStatus))
+                        continue; // cant change rejected or hired
+
+                    if (!ApplicationStatus.AllowedTransitions.TryGetValue(currentStatus, out var allowedNext) ||
+                        !allowedNext.Contains(newStatus))
+                        continue; // check valid transition
+
+
+                    // imp check all reviews complete
+                    if (newStatus == ApplicationStatus.Shortlisted)
+                    {
+                        var hasPendingReviews = application.AssignedReviewers
+                            .Any(r => r.isActive && !r.IsReviewCompleted);
+
+                        if (hasPendingReviews)
+                            continue;
+                    }
+
+                    // if test passed and test scheduled then move forward otherwise skip whole application
+                    if (newStatus == ApplicationStatus.TestPassed &&
+                        currentStatus != ApplicationStatus.TestScheduled)
+                        continue;
+
+                    // validate interview passed
+                    if (newStatus == ApplicationStatus.InterviewCompleted &&
+                        currentStatus != ApplicationStatus.InterviewInProgress)
+                        continue;
+
+                    // updating status
+                    application.CurrentStatus = newStatus;
+                    application.StatusUpdatedAt = DateTime.UtcNow;
+
+                    if (newStatus == ApplicationStatus.OnHold)
+                        application.StatusNote = note;
+                    else
+                        application.StatusNote = null;
+
+
+                    // inserting interview rounds for application from default job rounds
+                    if (newStatus == ApplicationStatus.InterviewInProgress)
+                    {
+                        // reuse above jobid
+                        var jobId = application.JobId;
+                        var intrwRounds = await _context.JobInterviewRounds
+                            .Where(ir => ir.JobId == jobId)
+                            .ToListAsync();
+
+                        // check if already interview rounds are applied if applied dont apply
+                        if (!_context.ApplicationInterviewRounds.Any(a => a.JobApplicationId == application.JobApplicationId))
+                        {
+                            foreach (var ir in intrwRounds)
+                            {
+                                _context.ApplicationInterviewRounds.Add(
+                                    new ApplicationInterviewRound
+                                    {
+                                        ApplicationInterviewRoundId = Guid.NewGuid(),
+                                        JobApplicationId = application.JobApplicationId,
+                                        RoundNumber = ir.RoundNumber,
+                                        RoundType = ir.RoundType,
+                                        Status = InterviewRoundStatus.Pending
+                                    }
+                                );
+
+                                // saved at last of method
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    error += 1;
+                    continue;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return error > 0;
+        }
+
     }
 
 }
