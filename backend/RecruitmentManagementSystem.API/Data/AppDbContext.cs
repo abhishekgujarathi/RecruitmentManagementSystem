@@ -55,6 +55,11 @@ namespace RecruitmentManagementSystem.API.Data
 
         // --- interview ---
 
+
+        public DbSet<CandidateVerification> CandidateVerifications { get; set; }
+        public DbSet<VerificationDocument> VerificationDocuments { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -7,6 +7,7 @@ using RecruitmentManagementSystem.API.DTOS.Request;
 using RecruitmentManagementSystem.API.DTOS.Response;
 using RecruitmentManagementSystem.API.Models;
 using System;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace RecruitmentManagementSystem.API.Services
 {
@@ -280,7 +281,7 @@ namespace RecruitmentManagementSystem.API.Services
             if (alreadyApplied)
                 throw new Exception("Already applied to this job.");
 
-             var jobReviewers = await _context.JobReviewers.Where(jr => jr.JobId == jobId).ToListAsync();
+            var jobReviewers = await _context.JobReviewers.Where(jr => jr.JobId == jobId).ToListAsync();
 
             // make new job application
             var newApplication = new JobApplication
@@ -349,8 +350,8 @@ namespace RecruitmentManagementSystem.API.Services
                     SkillId = js.SkillId,
                     SkillName = js.Skill.Name,
                     MinExperienceYears = js.MinExperienceYears,
-                    HasSkill = review?.HasSkill, 
-                    YearsOfExperience = review?.ExperienceYears 
+                    HasSkill = review?.HasSkill,
+                    YearsOfExperience = review?.ExperienceYears
                 };
             }).ToList();
 
@@ -472,7 +473,7 @@ namespace RecruitmentManagementSystem.API.Services
                 .Include(c => c.CommentedBy)
                 .Where(c => c.JobApplicationId == applicationId
                             && c.CommentedByUid == userId
-                            && c.JobApplication.AssignedReviewers.Any(ar => ar.ReviewerUserId == userId)) 
+                            && c.JobApplication.AssignedReviewers.Any(ar => ar.ReviewerUserId == userId))
                 .OrderByDescending(c => c.CommentDate)
                 .Select(c => new ReviewCommentDto
                 {
@@ -698,6 +699,11 @@ namespace RecruitmentManagementSystem.API.Services
                 }
             }
 
+            if (newStatus == ApplicationStatus.Hired)
+            {
+                await CreateVerificationForHiredCandidateAsync(application);
+            }
+
 
             // atlast savin changes
             await _context.SaveChangesAsync();
@@ -794,6 +800,12 @@ namespace RecruitmentManagementSystem.API.Services
                             }
                         }
                     }
+
+                    if (newStatus == ApplicationStatus.Hired)
+                    {
+                        await CreateVerificationForHiredCandidateAsync(application);
+                    }
+
                 }
                 catch
                 {
@@ -806,6 +818,48 @@ namespace RecruitmentManagementSystem.API.Services
             return error > 0;
         }
 
-    }
 
+        private async Task CreateVerificationForHiredCandidateAsync(JobApplication application)
+        {
+            // prevent duplicate verification
+            var existingVerification = await _context.CandidateVerifications
+                .AnyAsync(v =>
+                    v.CandidateProfileId == application.CandidateProfileId &&
+                    v.JobId == application.JobId);
+
+            if (existingVerification) return;
+
+            var verification = new CandidateVerification
+            {
+                CandidateVerificationId = Guid.NewGuid(),
+                CandidateProfileId = application.CandidateProfileId,
+                JobId = application.JobId,
+                Status = VerificationStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.CandidateVerifications.Add(verification);
+
+            var requiredDocuments = new[]
+            {
+                "Aadhaar",
+                "PAN",
+                "DegreeCertificate",
+                "ExperienceLetter"
+            };
+
+            foreach (var docType in requiredDocuments)
+            {
+                verification.Documents.Add(new VerificationDocument
+                {
+                    VerificationDocumentId = Guid.NewGuid(),
+                    CandidateVerificationId = verification.CandidateVerificationId,
+                    DocumentType = docType,
+                    FileUrl = string.Empty, 
+                    Status = VerificationStatus.Pending,
+                    UploadedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
 }

@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.Json;
 using RecruitmentManagementSystem.API.Common.Enums;
 using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.DTOS.Response;
@@ -133,7 +134,8 @@ namespace RecruitmentManagementSystem.API.Services.Jobs
                     IsApplied = candidateProfileId != null
                     ? job.Applications.Any(appli => appli.CandidateProfileId == candidateProfileId.Value)
                     : null,
-
+                    IsClosed=job.IsClosed,
+                    Reason=job.CloseReason,
                     JobDescription = new JobDescriptionDto
                     {
                         JobDescriptionId = job.JobDescriptionId,

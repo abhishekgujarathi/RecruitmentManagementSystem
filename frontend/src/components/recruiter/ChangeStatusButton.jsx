@@ -35,6 +35,11 @@ export default function ChangeStatusButton({ applicationId, currentStatus }) {
     try {
       setLoading(true);
 
+      console.log({
+        newStatus: status,
+        note: status === "OnHold" ? note : null,
+      });
+      // return;
       await api.patch(`Applications/${applicationId}/status`, {
         newStatus: status,
         note: status === "OnHold" ? note : null,

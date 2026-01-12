@@ -37,10 +37,11 @@ namespace RecruitmentManagementSystem.API.Models
         // deadline_date
         public required DateTime DeadlineDate { get; set; }
 
-        public bool IsActive { get; set; } = false;
+        public bool IsActive { get; set; } = true;
         public DateTime? ClosedDate { get; set; }
+        public string IsClosed { get; set; } = "Open";
+        public string? CloseReason { get; set; } = string.Empty;
         
-
         // nav prop
         public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
     }

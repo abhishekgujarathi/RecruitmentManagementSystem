@@ -13,6 +13,8 @@ namespace RecruitmentManagementSystem.API.DTOS.Response
         public DateTime? LastModifiedDate { get; set; }
         public required Guid CreatedByUserId { get; set; }
         public bool? IsApplied { get; set; }
+        public string IsClosed { get; set; }
+        public string Reason { get; set; }
     }
     public class JobSkillDto
     {

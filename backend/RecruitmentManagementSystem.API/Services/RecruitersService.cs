@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using RecruitmentManagementSystem.API.Common;
 using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.DTOS;
 using RecruitmentManagementSystem.API.DTOS.Request;
@@ -29,9 +30,12 @@ namespace RecruitmentManagementSystem.API.Services
         Task<List<KeyValuePair<Guid, string>>> GetAllEmployeesForReviewAsync(Guid applicationId);
         Task<List<KeyValuePair<Guid, string>>> AllReviewersAsync();
 
-        Task<bool> AssignDefaultJobReviewerAsync(Guid jobId,Guid reviewerId,Guid assignedByUserId);
+        Task<bool> AssignDefaultJobReviewerAsync(Guid jobId, Guid reviewerId, Guid assignedByUserId);
         Task<bool> RemoveDefaultJobReviewerAsync(Guid jobId, Guid reviewerId, Guid recruiterId);
         Task<List<KeyValuePair<Guid, string>>> GetDefaultJobReviewerAsync(Guid jobId);
+
+        Task<bool> CloseJobAsync(Guid jobId, Guid recruiterId, string reason);
+
     }
 
 
@@ -81,6 +85,13 @@ namespace RecruitmentManagementSystem.API.Services
                 CreatedByUserId = recruiterId
             };
             _context.Jobs.Add(job);
+
+            _context.JobInterviewRounds.AddRange(
+                new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job.JobId, RoundNumber = 1, RoundType = InterviewRoundType.Technical },
+                new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job.JobId, RoundNumber = 2, RoundType = InterviewRoundType.Technical },
+                new JobInterviewRound { JobInterviewRoundId = Guid.NewGuid(), JobId = job.JobId, RoundNumber = 3, RoundType = InterviewRoundType.HR }
+
+                );
 
             await _context.SaveChangesAsync();
 
@@ -327,7 +338,7 @@ namespace RecruitmentManagementSystem.API.Services
         }
 
 
-        public async Task<bool> AssignDefaultJobReviewerAsync(Guid jobId,Guid reviewerId,Guid assignedByUserId)
+        public async Task<bool> AssignDefaultJobReviewerAsync(Guid jobId, Guid reviewerId, Guid assignedByUserId)
         {
             var jobExists = await _context.Jobs.AnyAsync(j => j.JobId == jobId);
             if (!jobExists) return false;
@@ -338,7 +349,7 @@ namespace RecruitmentManagementSystem.API.Services
                 jr.IsActive);
 
             if (alreadyAssigned)
-                return true; 
+                return true;
 
             var jobReviewer = new JobReviewer
             {
@@ -376,7 +387,7 @@ namespace RecruitmentManagementSystem.API.Services
         public async Task<List<KeyValuePair<Guid, string>>> GetDefaultJobReviewerAsync(Guid jobId)
         {
             var reviewers = await _context.JobReviewers
-                .Include(jr=>jr.Reviewer)
+                .Include(jr => jr.Reviewer)
                 .Where(jr => jr.JobId == jobId && jr.IsActive)
                 .Select(jr => new KeyValuePair<Guid, string>(
                     jr.ReviewerId,
@@ -386,5 +397,26 @@ namespace RecruitmentManagementSystem.API.Services
 
             return reviewers;
         }
+        public async Task<bool> CloseJobAsync(Guid jobId, Guid recruiterId, string reason)
+        {
+            var job = await _context.Jobs
+                .FirstOrDefaultAsync(j => j.JobId == jobId);
+
+            if (job == null)
+                return false;
+
+            // prevent double close
+            if (job.IsClosed == "Closed")
+                return false;
+
+            job.IsClosed = "Closed";
+            job.ClosedDate = DateTime.UtcNow;
+            job.CloseReason = reason;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
     }
 }

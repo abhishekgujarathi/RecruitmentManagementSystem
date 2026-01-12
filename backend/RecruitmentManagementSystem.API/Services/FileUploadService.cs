@@ -7,6 +7,7 @@ namespace RecruitmentManagementSystem.API.Services
         Task<string> UploadPdfAsync(Guid userID, IFormFile file);
         (byte[] FileBytes, string FileName)? DownloadPdf(Guid userId);
         Task<CvResponseDto> GetPdfAsync(Guid userID);
+        Task<string> SaveAsync(IFormFile file);
     }
     public class FileUploadService : IFileUploadService
     {
@@ -83,6 +84,26 @@ namespace RecruitmentManagementSystem.API.Services
 
 
             return (fileBytes,"cv.pdf");
+        }
+
+        public async Task<string> SaveAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw new Exception("File is empty");
+
+            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var fullPath = Path.Combine(uploadsFolder, fileName);
+
+            using var stream = new FileStream(fullPath, FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            // return URL-safe path for DB
+            return $"/uploads/{fileName}";
         }
     }
 }

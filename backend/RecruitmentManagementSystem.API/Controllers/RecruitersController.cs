@@ -205,6 +205,30 @@ namespace RecruitmentManagementSystem.API.Controllers
             return Ok(success);
         }
 
+        [HttpPatch("jobs/{jobId}/close")]
+        public async Task<IActionResult> CloseJob(Guid jobId,[FromBody] CloseJobRequestDto dto)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+
+                var success = await _recruitersService.CloseJobAsync(
+                    jobId,
+                    recruiterId,
+                    dto.Reason
+                );
+
+                if (!success)
+                    return NotFound(new { message = "Job not found or already closed" });
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
     }
 }
