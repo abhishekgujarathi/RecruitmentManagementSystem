@@ -29,20 +29,7 @@ const Navbar = ({
   const isLoggedIn = !!authState?.token;
 
   // nav links
-  const menu = [
-    // {
-    //   title: "DashBoard",
-    //   url: !!authState?.token
-    //     ? authState.role === "Candidate"
-    //       ? "/candidate/dashboard"
-    //       : "/recruiter/dashboard"
-    //     : "/login",
-    // },
-    // { title: "Jobs", url: "/jobs" },
-    // { title: "Resources", url: "/resources" },
-    // { title: "Pricing", url: "/pricing" },
-    // { title: "Blog", url: "/blog" },
-  ];
+  const menu = [];
 
   const auth = {
     login: { title: "Login", url: "/login" },

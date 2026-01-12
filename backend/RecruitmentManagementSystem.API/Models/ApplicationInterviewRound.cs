@@ -25,5 +25,7 @@ namespace RecruitmentManagementSystem.API.Models
 
         // define empty list 
         public virtual ICollection<InterviewPanelMember> PanelMembers { get; set; } = new List<InterviewPanelMember>();
+        public virtual ICollection<InterviewFeedback> Feedbacks { get; set; } = new List<InterviewFeedback>();
+
     }
 }

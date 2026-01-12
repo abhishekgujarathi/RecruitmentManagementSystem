@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RecruitmentManagementSystem.API.Common;
 using RecruitmentManagementSystem.API.Data;
 using RecruitmentManagementSystem.API.DTOS.Request;
 using RecruitmentManagementSystem.API.DTOS.Response;
 using RecruitmentManagementSystem.API.Models;
+using System;
 namespace RecruitmentManagementSystem.API.Services
 {
     public interface IInterviewService
@@ -21,13 +23,19 @@ namespace RecruitmentManagementSystem.API.Services
         Task UpdateApplicationInterviewRoundsAsync(Guid applicationId, List<ApplicationInterviewsUpsertDto> rounds);
 
         // schdeuling 
-        Task ScheduleInterviewAsync(Guid roundId, DateTime scheduledAt);
-
-        Task AssignMeetLinkAsync(Guid roundId, string meetLink);
-
         // panel members
-        Task AddPanelMemberAsync(Guid roundId, Guid interviewerId, Guid recruiterId);
-        Task RemovePanelMemberAsync(Guid panelMemberId);
+        Task UpdateInterviewRoundAsync(Guid roundId, Guid recruiterId, UpdateInterviewRoundDto dto);
+        Task NotifyInterviewRoundAsync(Guid roundId);
+
+
+        // feedbacks comments
+        Task<List<ApplicationInterviewsDto>> GetInterviewerAssignedRoundsAsync(Guid interviewerId);
+        Task<List<InterviewRoundSummaryDto?>> GetInterviewRoundSummariesAsync(Guid applicationId, Guid interviewerId);
+        Task<List<InterviewRoundSummaryDto?>> GetInterviewAllRoundSummariesAsync(Guid applicationId);
+        Task UpsertInterviewFeedbackAsync(Guid roundId, Guid interviewerId, UpdateInterviewFeedbackDto dto);
+
+        Task RejectInterviewRoundAsync(Guid roundId);
+        Task CompleteInterviewRoundAsync(Guid roundId);
 
 
     }
@@ -271,6 +279,259 @@ namespace RecruitmentManagementSystem.API.Services
             round.MeetLink = meetLink;
             await _context.SaveChangesAsync();
         }
+
+        public async Task UpdateInterviewRoundAsync(Guid roundId, Guid recruiterId, UpdateInterviewRoundDto dto)
+        {
+            var round = await _context.ApplicationInterviewRounds
+                .FirstOrDefaultAsync(r => r.ApplicationInterviewRoundId == roundId);
+
+            if (round == null)
+                throw new ArgumentException("Round not found");
+
+            round.ScheduledAt = dto.ScheduledAt;
+            round.MeetLink = dto.MeetLink;
+            round.Status = InterviewRoundStatus.Scheduled;
+
+            var existingMembers = await _context.InterviewPanelMembers
+                .Where(pm => pm.ApplicationInterviewRoundId == roundId)
+                .ToListAsync();
+
+            foreach (var interviewerId in dto.PanelMembers)
+            {
+                var existingMember = existingMembers
+                    .FirstOrDefault(pm => pm.InterviewerId == interviewerId);
+
+                if (existingMember == null)
+                {
+                    //not existing
+                    var newMember = new InterviewPanelMember
+                    {
+                        InterviewPanelMemberId = Guid.NewGuid(),
+                        ApplicationInterviewRoundId = roundId,
+                        InterviewerId = interviewerId,
+                        AssignedAt = DateTime.UtcNow,
+                        AssignedByUserId = recruiterId
+                    };
+                    _context.InterviewPanelMembers.Add(newMember);
+                }
+            }
+
+            foreach (var existingMember in existingMembers)
+            {
+                // checking if existing id is in incoming ids
+                if (!dto.PanelMembers.Contains(existingMember.InterviewerId))
+                {
+                    _context.InterviewPanelMembers.Remove(existingMember);
+                }
+            }
+
+            var application = await _context.JobApplications
+                .FirstOrDefaultAsync(ja => ja.JobApplicationId == round.JobApplicationId);
+            application.CurrentStatus = ApplicationStatus.InterviewInProgress;
+            application.StatusUpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
+
+
+        public async Task NotifyInterviewRoundAsync(Guid roundId)
+        {
+            var round = await _context.ApplicationInterviewRounds
+                .Include(r => r.PanelMembers)
+                .ThenInclude(pm => pm.Interviewer)
+                .FirstOrDefaultAsync(r => r.ApplicationInterviewRoundId == roundId);
+
+            if (round == null)
+                throw new ArgumentException("Round not found");
+
+
+            // later email here;
+
+
+        }
+
+
+        // get all interviews assigned to the person
+        public async Task<List<ApplicationInterviewsDto>> GetInterviewerAssignedRoundsAsync(Guid interviewerId)
+        {
+            if (interviewerId == Guid.Empty)
+                throw new ArgumentException("interviewerId is required");
+
+            var rounds = await _context.ApplicationInterviewRounds
+                .Where(r => r.PanelMembers.Any(pm => pm.InterviewerId == interviewerId))
+                .Include(r => r.PanelMembers)
+                    .ThenInclude(pm => pm.Interviewer)
+                .Include(r => r.JobApplication)
+                    .ThenInclude(a => a.CandidateProfile)
+                .ToListAsync();
+
+            return _mapper.Map<List<ApplicationInterviewsDto>>(rounds);
+        }
+
+        public async Task<List<InterviewRoundSummaryDto>> GetInterviewRoundSummariesAsync(Guid applicationId, Guid interviewerId)
+        {
+            var rounds = await _context.ApplicationInterviewRounds
+                .Include(r => r.Feedbacks)
+                    .ThenInclude(f => f.SkillRatings)
+                    .ThenInclude(sr => sr.Skill)
+                .Where(r =>
+                    r.JobApplicationId == applicationId &&
+                    r.PanelMembers.Any(pm => pm.InterviewerId == interviewerId))
+                .OrderBy(r => r.ScheduledAt)
+                .ToListAsync();
+
+            var jobSkills = await _context.JobApplications
+                .Where(ja => ja.JobApplicationId == applicationId)
+                .SelectMany(ja => ja.Job.JobSkills)
+                .Select(js => new
+                {
+                    SkillId = js.Skill.SkillId,
+                    SkillName = js.Skill.Name
+                })
+                .ToListAsync();
+
+            foreach (var round in rounds)
+            {
+                // get only the feedback of the current interviewer
+                var feedback = round.Feedbacks.FirstOrDefault(f => f.InterviewerId == interviewerId);
+
+                if (feedback == null)
+                {
+                    feedback = new InterviewFeedback
+                    {
+                        InterviewerId = interviewerId,
+                        ApplicationInterviewRoundId = round.ApplicationInterviewRoundId,
+                        SkillRatings = new List<InterviewSkillRating>()
+                    };
+                    round.Feedbacks.Add(feedback);
+                }
+
+                // if no skill ratings yet
+                // init skills
+                if (!feedback.SkillRatings.Any())
+                {
+                    feedback.SkillRatings = jobSkills.Select(skill => new InterviewSkillRating
+                    {
+                        SkillId = skill.SkillId,
+                        Skill = new Skill { SkillId = skill.SkillId, Name = skill.SkillName },
+                        Rating = 0
+                    }).ToList();
+                }
+
+                // keep only this interviewers feedback
+                round.Feedbacks = new List<InterviewFeedback> { feedback };
+            }
+
+            return _mapper.Map<List<InterviewRoundSummaryDto>>(rounds);
+        }
+
+
+        public async Task UpsertInterviewFeedbackAsync(Guid roundId, Guid interviewerId, UpdateInterviewFeedbackDto dto)
+        {
+            var feedback = await _context.InterviewFeedbacks
+                .Include(f => f.SkillRatings)
+                .FirstOrDefaultAsync(f =>
+                    f.ApplicationInterviewRoundId == roundId &&
+                    f.InterviewerId == interviewerId);
+
+            if (feedback == null)
+            {
+                feedback = new InterviewFeedback
+                {
+                    ApplicationInterviewRoundId = roundId,
+                    InterviewerId = interviewerId,
+                    CreatedAt = DateTime.UtcNow,
+                    SkillRatings = new List<InterviewSkillRating>()
+                };
+
+                _context.InterviewFeedbacks.Add(feedback);
+            }
+
+            // update comment
+            feedback.Comments = dto.Comments;
+
+            //loop thru skill
+            foreach (var dtoRating in dto.SkillRatings)
+            {
+                var existingRating = feedback.SkillRatings
+                    .FirstOrDefault(sr => sr.SkillId == dtoRating.SkillId);
+
+                if (existingRating == null)
+                {
+                    // new 
+                    feedback.SkillRatings.Add(new InterviewSkillRating
+                    {
+                        SkillId = dtoRating.SkillId,
+                        Rating = dtoRating.Rating
+                    });
+                }
+                else
+                {
+                    // update
+                    existingRating.Rating = dtoRating.Rating;
+                }
+            }
+
+            
+            // Recalculate overall rating
+            feedback.OverallRating = feedback.SkillRatings.Any()
+                ? feedback.SkillRatings.Average(s => s.Rating)
+                : null;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<InterviewRoundSummaryDto?>> GetInterviewAllRoundSummariesAsync(Guid applicationId)
+        {
+            var rounds = await _context.ApplicationInterviewRounds
+                .Where(r => r.JobApplicationId == applicationId)
+                .Include(r => r.Feedbacks)
+                    .ThenInclude(f => f.Interviewer)
+                .Include(r => r.Feedbacks)
+                    .ThenInclude(f => f.SkillRatings)
+                        .ThenInclude(sr => sr.Skill)
+                .OrderBy(r => r.RoundNumber)
+                .ToListAsync();
+
+            return _mapper.Map<List<InterviewRoundSummaryDto?>>(rounds);
+        }
+
+
+        public async Task RejectInterviewRoundAsync(Guid roundId)
+        {
+
+            var round = await _context.ApplicationInterviewRounds
+                .FirstOrDefaultAsync(r => r.ApplicationInterviewRoundId == roundId);
+
+            if (round == null)
+                throw new Exception("Round not found");
+
+            round.Status = "Rejected";
+
+            var application = await _context.JobApplications
+                .FirstOrDefaultAsync(ja => ja.JobApplicationId == round.JobApplicationId);
+            application.CurrentStatus = ApplicationStatus.Rejected;
+            application.StatusUpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task CompleteInterviewRoundAsync(Guid roundId)
+        {
+            var round = await _context.ApplicationInterviewRounds
+                .FirstOrDefaultAsync(r => r.ApplicationInterviewRoundId == roundId);
+
+            if (round == null)
+                throw new Exception("Round not found");
+
+            round.Status = "Completed";
+            var application = await _context.JobApplications
+                .FirstOrDefaultAsync(ja => ja.JobApplicationId == round.JobApplicationId);
+            application.CurrentStatus = ApplicationStatus.InterviewCompleted;
+            application.StatusUpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
 
     }
 }

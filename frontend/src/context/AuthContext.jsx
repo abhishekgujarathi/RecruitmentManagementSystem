@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
-      {console.log(authState)}
+      {/* {console.log(authState)} */}
     </AuthContext.Provider>
   );
 };

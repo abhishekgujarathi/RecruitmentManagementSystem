@@ -83,6 +83,30 @@ public class MappingProfile : Profile
                 d => d.InterviewerName,
                 o => o.MapFrom(s => s.Interviewer.Fname + " " + s.Interviewer.Lname)
             );
+        
+        CreateMap<ApplicationInterviewRound, InterviewRoundSummaryDto>()
+            .ForMember(d => d.ApplicationInterviewRoundId,
+                o => o.MapFrom(s => s.ApplicationInterviewRoundId))
+            .ForMember(d => d.RoundType,
+                o => o.MapFrom(s => s.RoundType))
+            .ForMember(d => d.ScheduledAt,
+                o => o.MapFrom(s => s.ScheduledAt))
+            .ForMember(d => d.Status,
+                o => o.MapFrom(s => s.Status))
+            .ForMember(d => d.Feedbacks,
+                o => o.MapFrom(s => s.Feedbacks));
+
+
+
+        CreateMap<InterviewFeedback, InterviewFeedbackDto>()
+            .ForMember(d => d.InterviewerName,
+                o => o.MapFrom(s => s.Interviewer.Fname))
+            .ForMember(d => d.SkillRatings,
+                o => o.MapFrom(s => s.SkillRatings));
+
+        CreateMap<InterviewSkillRating, InterviewFeedbackSkillDto>()
+            .ForMember(d => d.SkillName,
+                o => o.MapFrom(s => s.Skill.Name));
         // --- interview ---
     }
 }

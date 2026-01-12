@@ -1,89 +1,129 @@
 import React, { useEffect, useState } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 const Applications = () => {
   const { authState } = useAuth();
 
-  const [applicationList, setApplicationList] = useState([]);
-  const [loading, setLoading] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMyApplicants = async () => {
       try {
-        const response = await api.get("Applications/assigned");
-
-        setApplicationList(response.data);
-        console.log("appli-", response.data);
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
+        const res = await api.get("Applications/assigned");
+        setApplications(res.data);
+      } catch (err) {
+        console.error("Failed to fetch applications", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchMyApplicants();
   }, []);
 
-  if (authState?.role !== "Employee") {
-    return null;
-  }
+  if (authState?.role !== "Employee") return null;
 
-  if (loading) {
-    return <div className="text-center py-10">Loading applicants...</div>;
+  const filtered = applications.filter((a) =>
+    a.candidateName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const pendingReviews = filtered.filter((a) => !a.reviewCompleted);
+  const completedReviews = filtered.filter((a) => a.reviewCompleted);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl">Applicants Assigned</CardTitle>
+      </CardHeader>
+      <Separator />
+
+      <CardContent className="space-y-6">
+        <Input
+          placeholder="Search by candidate name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+
+        {loading ? (
+          <div className="text-sm text-muted-foreground">
+            Loading applicants...
+          </div>
+        ) : (
+          <>
+            {/* Pending Reviews */}
+            <div>
+              <h3 className="font-semibold mb-2">Pending Reviews</h3>
+              {renderTable(pendingReviews)}
+            </div>
+
+            <Separator />
+
+            {/* Completed Reviews */}
+            <div>
+              <h3 className="font-semibold mb-2">Completed Reviews</h3>
+              {renderTable(completedReviews)}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const renderTable = (data) => {
+  if (data.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground py-2">No applications</div>
+    );
   }
 
   return (
-    <main>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Applicants Assigned</CardTitle>
-        </CardHeader>
-        <Separator />
-        <CardContent>
-          {applicationList.length > 0 ? (
-            applicationList.map((apl, idx) => (
-              <div key={`${apl.applicationId}-${idx}`} className="py-2">
-                <Card className="border rounded-md shadow-sm">
-                  <CardContent className="grid grid-cols-2 gap-2 items-center">
-                    <div>
-                      <p className="font-medium">{apl.candidateName}</p>
-                      <p className="text-sm text-gray-500">
-                        Applied on:{" "}
-                        {new Date(apl.applicationDate).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Status: {apl.currentStatus}
-                      </p>
-                    </div>
-                    <Button asChild className="justify-self-end">
-                      <a
-                        href={`applications/${apl.applicationId}`}
-                        className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                      >
-                        View
-                      </a>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-4 text-gray-500">
-              No Applications Assigned
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </main>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Candidate</TableHead>
+          <TableHead>Applied On</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-right">Action</TableHead>
+        </TableRow>
+      </TableHeader>
+
+      <TableBody>
+        {data.map((apl) => (
+          <TableRow key={apl.applicationId}>
+            <TableCell className="font-medium">{apl.candidateName}</TableCell>
+
+            <TableCell>
+              {new Date(apl.applicationDate).toLocaleDateString()}
+            </TableCell>
+
+            <TableCell>{apl.currentStatus}</TableCell>
+
+            <TableCell className="text-right">
+              <Button asChild size="sm">
+                <a href={`applications/${apl.applicationId}`}>View</a>
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 };
 

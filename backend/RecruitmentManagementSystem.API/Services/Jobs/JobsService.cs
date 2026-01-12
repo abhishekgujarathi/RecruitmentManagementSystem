@@ -32,20 +32,31 @@ namespace RecruitmentManagementSystem.API.Services.Jobs
 
             if (userRoleType == UserRoleType.Candidate && userId != Guid.Empty)
             {
+                try
+                {
+
                 var candidateProfile = await _context.CandidateProfiles.FirstOrDefaultAsync(c => c.UserId == userId);
                 candidateProfileId = candidateProfile.CandidateProfileId;
+                }
+                catch
+                {
+                    throw new ArgumentNullException("create candidate profile");
+                }
             }
 
             var jobs = await _context.Jobs
                 .Include(job => job.JobDescription)
-                .ThenInclude(jd => jd.JobType)
-                .Include(jod => jod.CreatedByUser)
-                .Select(job => new JobResponseDto()
+                    .ThenInclude(jd => jd.JobType)
+                .Include(job => job.JobSkills)
+                    .ThenInclude(js => js.Skill)
+                .Include(job => job.CreatedByUser)
+                .Select(job => new JobResponseDto
                 {
                     JobId = job.JobId,
                     OpeningsCount = job.OpeningsCount,
                     CreatedDate = job.CreatedDate,
                     DeadlineDate = job.DeadlineDate,
+
                     JobDescription = new JobDescriptionDto
                     {
                         JobDescriptionId = job.JobDescription.JobDescriptionId,
@@ -55,12 +66,21 @@ namespace RecruitmentManagementSystem.API.Services.Jobs
                         MinimumExperienceReq = job.JobDescription.MinimumExperienceReq,
                         JobType = job.JobDescription.JobType.TypeName,
                         Responsibilities = job.JobDescription.Responsibilty
-
                     },
+
+                    JobSkills = job.JobSkills
+                        .Select(js => new JobSkillDto
+                        {
+                            SkillId = js.SkillId,
+                            SkillName = js.Skill.Name
+                        })
+                        .ToList(),
+
                     CreatedByUserId = job.CreatedByUserId,
+
                     IsApplied = candidateProfileId != null
-                    ? job.Applications.Any(appli => appli.CandidateProfileId == candidateProfileId.Value)
-                    : null,
+                        ? job.Applications.Any(a => a.CandidateProfileId == candidateProfileId.Value)
+                        : null
                 })
                 .ToListAsync();
 
@@ -123,7 +143,14 @@ namespace RecruitmentManagementSystem.API.Services.Jobs
                         Details = job.JobDescription.Details,
                         Responsibilities = job.JobDescription.Responsibilty,
                         MinimumExperienceReq = job.JobDescription.MinimumExperienceReq
-                    }
+                    },
+                    JobSkills = job.JobSkills
+                        .Select(js => new JobSkillDto
+                        {
+                            SkillId = js.SkillId,
+                            SkillName = js.Skill.Name
+                        })
+                        .ToList(),
                 })
                 .FirstOrDefaultAsync();
 

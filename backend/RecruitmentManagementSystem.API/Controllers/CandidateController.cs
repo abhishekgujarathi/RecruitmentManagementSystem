@@ -146,9 +146,25 @@ namespace RecruitmentManagementSystem.API.Controllers
 
         }
 
+        [Authorize(Roles = "Candidate")]
+        [HttpGet("applications")]
+        public async Task<IActionResult> MyApplications()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            Guid.TryParse(userIdClaim?.Value, out Guid userId);
 
-        // DELETE /api/candidate/cv/{id}
-        // -------- CV/RESUME --------
+            try
+            {
+                var res = await _candidateService.GetMyApplicationsAsync(userId);
+
+                return Ok(res);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
 
     }
 }

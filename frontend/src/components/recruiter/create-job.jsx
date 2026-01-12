@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import api from "../../services/api";
 import { toast } from "sonner";
 import { useAuth } from "../../hooks/useAuth";
+import SkillComboBox from "../shared/skillComboBox";
+import DefaultReviewer from "./DefaultReviewer";
 
 const CreateJobForm = () => {
   const { authState } = useAuth();
@@ -35,6 +37,7 @@ const CreateJobForm = () => {
     minimumExperienceReq: "",
     openingsCount: 1,
     deadlineDate: "",
+    skills: [],
   });
 
   const [loading, setLoading] = useState(false);
@@ -57,6 +60,7 @@ const CreateJobForm = () => {
         minimumExperienceReq: parseInt(formData.minimumExperienceReq || 0),
         openingsCount: parseInt(formData.openingsCount || 1),
         responsibilities: formData.responsibilities?.trim() || null,
+        skillIds: formData.skills.map((s) => s.skillId),
       });
 
       toast("Job created successfully!");
@@ -69,6 +73,7 @@ const CreateJobForm = () => {
         minimumExperienceReq: "",
         openingsCount: 1,
         deadlineDate: "",
+        skills: [],
       });
     } catch (error) {
       console.error(error);
@@ -82,20 +87,22 @@ const CreateJobForm = () => {
     }
   };
 
-  // const assignReviewer = async () => {
-  //   if (!selectedReviewerId) return;
+  const handleSkillSelect = (skillId, name) => {
+    setFormData((prev) => {
+      if (prev.skills.some((s) => s.skillId === skillId)) return prev;
+      return {
+        ...prev,
+        skills: [...prev.skills, { skillId, name }],
+      };
+    });
+  };
 
-  //   const res = await api.post(`Applications/${applicationId}/reviewers`, {
-  //     reviewerId: selectedReviewerId,
-  //   });
-
-  //   if (res.status == 200) {
-  //     getApplicationReviewers();
-  //     setReviewers([]);
-  //     getReviewerList();
-  //     alert("Reviewer Added");
-  //   }
-  // };
+  const removeSkill = (skillId) => {
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => s.skillId !== skillId),
+    }));
+  };
 
   const getReviewerList = async () => {
     // fetching list of reviweres
@@ -112,7 +119,7 @@ const CreateJobForm = () => {
   };
 
   return (
-    <div className="flex justify-center py-10">
+    <div className="flex flex-col justify-center py-10">
       <Card className="w-full max-w-2xl shadow-sm border">
         <CardHeader>
           <CardTitle>Create a New Job</CardTitle>
@@ -213,33 +220,34 @@ const CreateJobForm = () => {
               />
             </div>
 
-            {/* {authState.employeeRoles.includes("Recruiter") && (
-              <>
-                <div className="mt-5 space-y-2">
-                  <Select onValueChange={setSelectedReviewerId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Reviewer" />
-                    </SelectTrigger>
+            <div>
+              <Label>Required Skills</Label>
+              <SkillComboBox
+                value={null}
+                intialLabel="Add skill"
+                onChange={handleSkillSelect}
+              />
 
-                    <SelectContent>
-                      {reviewers.map((r) => (
-                        <SelectItem key={r.key} value={r.key}>
-                          {r.value}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Button
-                    onClick={assignReviewer}
-                    className="w-full"
-                    disabled={!selectedReviewerId}
-                  >
-                    Assign Reviewer
-                  </Button>
+              {formData.skills.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.skills.map((skill) => (
+                    <span
+                      key={skill.skillId}
+                      className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-sm"
+                    >
+                      {skill.name}
+                      <button
+                        type="button"
+                        className="text-red-500"
+                        onClick={() => removeSkill(skill.skillId)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
-              </>
-            )} */}
+              )}
+            </div>
 
             <CardFooter className="p-0 pt-4">
               <Button type="submit" disabled={loading} className="w-full">

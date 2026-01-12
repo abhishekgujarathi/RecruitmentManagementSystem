@@ -84,20 +84,24 @@ namespace RecruitmentManagementSystem.API.Services
         public async Task<IEnumerable<JobApplicationDto>> GetApplicationsAsync(Guid reviewerId)
         {
             var applications = await _context.JobApplications
-                .Include(a => a.CandidateProfile)
-                    .ThenInclude(cp => cp.User)
-                .Include(a => a.AssignedReviewers)
-                .Where(a => a.AssignedReviewers.Any(ar => ar.ReviewerUserId == reviewerId))
+                .Where(a =>
+                    a.AssignedReviewers.Any(ar => ar.ReviewerUserId == reviewerId))
                 .Select(a => new JobApplicationDto
                 {
                     JobApplicationId = a.JobApplicationId,
-                    CandidateName = a.CandidateProfile.User.Fname + " " + a.CandidateProfile.User.Lname,
+
+                    CandidateName =
+                        a.CandidateProfile.User.Fname + " " +
+                        a.CandidateProfile.User.Lname,
+
                     ApplicationDate = a.ApplicationDate,
                     CurrentStatus = a.CurrentStatus,
                     CandidateProfileId = a.CandidateProfileId,
-                    ApplicationId = a.JobApplicationId,
-                    StatusUpdatedAt = a.StatusUpdatedAt
+                    StatusUpdatedAt = a.StatusUpdatedAt,
 
+                    ReviewCompleted = a.AssignedReviewers.Any(ar =>
+                        ar.ReviewerUserId == reviewerId &&
+                        ar.IsReviewCompleted)
                 })
                 .ToListAsync();
 
@@ -276,7 +280,7 @@ namespace RecruitmentManagementSystem.API.Services
             if (alreadyApplied)
                 throw new Exception("Already applied to this job.");
 
-            // var jobReviewers = await _context.JobReviewers.Where(jr => jr.JobId == jobId).ToListAsync();
+             var jobReviewers = await _context.JobReviewers.Where(jr => jr.JobId == jobId).ToListAsync();
 
             // make new job application
             var newApplication = new JobApplication
@@ -286,22 +290,22 @@ namespace RecruitmentManagementSystem.API.Services
                 JobId = jobId,
                 ApplicationDate = DateTime.UtcNow,
                 CurrentStatus = ApplicationStatus.Applied,
-                //AssignedReviewers = jobReviewers
+                AssignedReviewers = new List<AssignedReviewer>()
             };
 
             // mapping each alrdy assigned reviewer to position to application
-            //foreach (var jr in jobReviewers)
-            //{
-            //    newApplication.AssignedReviewers.Add(new AssignedReviewer
-            //    {
-            //        AssignedReviewersId = Guid.NewGuid(),
-            //        JobApplicationId = newApplication.JobApplicationId,
-            //        ReviewerUserId = jr.ReviewerId,
-            //        AssignedDate = DateTime.UtcNow,
-            //        AssignedByUid = jr.AssignedBy,
-            //        isActive = true
-            //    });
-            //}
+            foreach (var jr in jobReviewers)
+            {
+                newApplication.AssignedReviewers.Add(new AssignedReviewer
+                {
+                    AssignedReviewersId = Guid.NewGuid(),
+                    JobApplicationId = newApplication.JobApplicationId,
+                    ReviewerUserId = jr.ReviewerId,
+                    AssignedDate = DateTime.UtcNow,
+                    AssignedByUid = jr.AssignedBy,
+                    isActive = true
+                });
+            }
 
 
 
@@ -335,9 +339,9 @@ namespace RecruitmentManagementSystem.API.Services
                 .Where(x => x.JobApplicationId == applicationId && x.ReviewerId == userId)
                 .ToListAsync();
 
-
-            return application.Job.JobSkills.Select(js =>
+            var res = application.Job.JobSkills.Select(js =>
             {
+                // check if already reviewed and if get the review
                 var review = reviewedSkills.FirstOrDefault(r => r.SkillId == js.SkillId);
 
                 return new ReviewSkillDto
@@ -345,10 +349,12 @@ namespace RecruitmentManagementSystem.API.Services
                     SkillId = js.SkillId,
                     SkillName = js.Skill.Name,
                     MinExperienceYears = js.MinExperienceYears,
-                    HasSkill = review?.HasSkill,
-                    YearsOfExperience = review?.ExperienceYears
+                    HasSkill = review?.HasSkill, 
+                    YearsOfExperience = review?.ExperienceYears 
                 };
             }).ToList();
+
+            return res;
         }
 
 
@@ -373,7 +379,7 @@ namespace RecruitmentManagementSystem.API.Services
 
                 if (existing == null)
                 {
-                    _context.ApplicationSkills.Add(new ApplicationSkill
+                    var aplSkill = new ApplicationSkill
                     {
                         ApplicationSkillId = Guid.NewGuid(),
                         JobApplicationId = applicationId,
@@ -381,7 +387,8 @@ namespace RecruitmentManagementSystem.API.Services
                         ReviewerId = reviewerId,
                         HasSkill = skill.HasSkill,
                         ExperienceYears = skill.YearsOfExperience
-                    });
+                    };
+                    _context.ApplicationSkills.Add(aplSkill);
                 }
                 else
                 {
@@ -465,7 +472,7 @@ namespace RecruitmentManagementSystem.API.Services
                 .Include(c => c.CommentedBy)
                 .Where(c => c.JobApplicationId == applicationId
                             && c.CommentedByUid == userId
-                            && c.JobApplication.AssignedReviewers.Any(ar => ar.ReviewerUserId == userId)) // used any as multiple navs
+                            && c.JobApplication.AssignedReviewers.Any(ar => ar.ReviewerUserId == userId)) 
                 .OrderByDescending(c => c.CommentDate)
                 .Select(c => new ReviewCommentDto
                 {
@@ -517,14 +524,16 @@ namespace RecruitmentManagementSystem.API.Services
                 // add coed
                 if (dto.ReviewCommentId == null)
                 {
-                    _context.ReviewComments.Add(new ReviewComment
+                    var rComment = new ReviewComment
                     {
                         ReviewCommentId = Guid.NewGuid(),
                         JobApplicationId = applicationId,
                         CommentedByUid = userId,
                         CommentText = dto.CommentText,
                         CommentDate = DateTime.UtcNow
-                    });
+                    };
+
+                    _context.ReviewComments.Add(rComment);
                     continue;
                 }
 
@@ -676,16 +685,15 @@ namespace RecruitmentManagementSystem.API.Services
                 {
                     foreach (var ir in intrwRounds)
                     {
-                        _context.ApplicationInterviewRounds.Add(
-                            new ApplicationInterviewRound
-                            {
-                                ApplicationInterviewRoundId = Guid.NewGuid(),
-                                JobApplicationId = applicationId,
-                                RoundNumber = ir.RoundNumber,
-                                RoundType = ir.RoundType,
-                                Status = InterviewRoundStatus.Pending
-                            }
-                        );
+                        var round = new ApplicationInterviewRound
+                        {
+                            ApplicationInterviewRoundId = Guid.NewGuid(),
+                            JobApplicationId = applicationId,
+                            RoundNumber = ir.RoundNumber,
+                            RoundType = ir.RoundType,
+                            Status = InterviewRoundStatus.Pending
+                        };
+                        _context.ApplicationInterviewRounds.Add(round);
                     }
                 }
             }
@@ -772,16 +780,15 @@ namespace RecruitmentManagementSystem.API.Services
                         {
                             foreach (var ir in intrwRounds)
                             {
-                                _context.ApplicationInterviewRounds.Add(
-                                    new ApplicationInterviewRound
-                                    {
-                                        ApplicationInterviewRoundId = Guid.NewGuid(),
-                                        JobApplicationId = application.JobApplicationId,
-                                        RoundNumber = ir.RoundNumber,
-                                        RoundType = ir.RoundType,
-                                        Status = InterviewRoundStatus.Pending
-                                    }
-                                );
+                                var round = new ApplicationInterviewRound
+                                {
+                                    ApplicationInterviewRoundId = Guid.NewGuid(),
+                                    JobApplicationId = application.JobApplicationId,
+                                    RoundNumber = ir.RoundNumber,
+                                    RoundType = ir.RoundType,
+                                    Status = InterviewRoundStatus.Pending
+                                };
+                                _context.ApplicationInterviewRounds.Add(round);
 
                                 // saved at last of method
                             }

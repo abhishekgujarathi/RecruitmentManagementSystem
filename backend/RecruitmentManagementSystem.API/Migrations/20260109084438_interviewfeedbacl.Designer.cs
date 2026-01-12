@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RecruitmentManagementSystem.API.Data;
 
@@ -11,9 +12,11 @@ using RecruitmentManagementSystem.API.Data;
 namespace RecruitmentManagementSystem.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260109084438_interviewfeedbacl")]
+    partial class interviewfeedbacl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -427,6 +430,9 @@ namespace RecruitmentManagementSystem.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("InterviewFeedbackId")
                         .HasColumnType("uniqueidentifier");
 
@@ -451,9 +457,6 @@ namespace RecruitmentManagementSystem.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ClosedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -463,7 +466,10 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.Property<DateTime>("DeadlineDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsActive")
+                    b.Property<bool>("DefaultInterviewRoundsDefined")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DefaultReviewersAssigned")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("JobDescriptionId")
@@ -577,33 +583,6 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.HasIndex("JobId");
 
                     b.ToTable("JobInterviewRounds");
-                });
-
-            modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobReviewer", b =>
-                {
-                    b.Property<Guid>("JobReviewerId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AssignedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("JobId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ReviewerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("JobReviewerId");
-
-                    b.HasIndex("JobId");
-
-                    b.HasIndex("ReviewerId");
-
-                    b.ToTable("JobReviewers");
                 });
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobSkill", b =>
@@ -981,7 +960,7 @@ namespace RecruitmentManagementSystem.API.Migrations
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.InterviewFeedback", b =>
                 {
                     b.HasOne("RecruitmentManagementSystem.API.Models.ApplicationInterviewRound", "ApplicationInterviewRound")
-                        .WithMany("Feedbacks")
+                        .WithMany()
                         .HasForeignKey("ApplicationInterviewRoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1103,25 +1082,6 @@ namespace RecruitmentManagementSystem.API.Migrations
                     b.Navigation("Job");
                 });
 
-            modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobReviewer", b =>
-                {
-                    b.HasOne("RecruitmentManagementSystem.API.Models.Job", "Job")
-                        .WithMany()
-                        .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RecruitmentManagementSystem.API.Models.User", "Reviewer")
-                        .WithMany()
-                        .HasForeignKey("ReviewerId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Job");
-
-                    b.Navigation("Reviewer");
-                });
-
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.JobSkill", b =>
                 {
                     b.HasOne("RecruitmentManagementSystem.API.Models.Job", "Job")
@@ -1173,8 +1133,6 @@ namespace RecruitmentManagementSystem.API.Migrations
 
             modelBuilder.Entity("RecruitmentManagementSystem.API.Models.ApplicationInterviewRound", b =>
                 {
-                    b.Navigation("Feedbacks");
-
                     b.Navigation("PanelMembers");
                 });
 

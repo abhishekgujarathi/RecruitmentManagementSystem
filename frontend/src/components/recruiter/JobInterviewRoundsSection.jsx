@@ -20,7 +20,7 @@ const JobInterviewRoundsSection = ({ jobId }) => {
   const fetchJobInterviewRounds = async () => {
     try {
       const res = await api.get(`/Interview/jobs/${jobId}`);
-      console.log(res.data);
+      // console.log(res.data);
       const sortedRounds = res.data.sort(
         (a, b) => a.roundNumber - b.roundNumber
       );

@@ -65,14 +65,14 @@ namespace RecruitmentManagementSystem.API.Controllers
 
         //GET /api/applications/{applicationId}
         //called to get details of any applications
-        [Authorize(Roles = "Recruiter, Reviewer")]
+        [Authorize(Roles = "Recruiter, Reviewer, Interviewer")]
         [HttpGet("{applicationId}")]
         public async Task<IActionResult> GetApplication(Guid applicationId)
         {
-            //Candidate summary
-            //Job info
-            //Application status
-            //Review progress
+            //candidate summary
+            //job info
+            //application status
+            //review progress
 
             var result = await _applicationsService.GetApplicationSummaryAsync(applicationId);
 
@@ -85,7 +85,7 @@ namespace RecruitmentManagementSystem.API.Controllers
 
 
         //GET /api/applications/{applicationId}/cv
-        [Authorize(Roles = "Recruiter,Reviewer")]
+        [Authorize(Roles = "Recruiter,Reviewer,Interviewer")]
         [HttpGet("{applicationId}/cv")]
         public async Task<IActionResult> GetApplicationCV(Guid applicationId)
         {
@@ -177,8 +177,8 @@ namespace RecruitmentManagementSystem.API.Controllers
         }
 
         //POST /api/applications/{applicationId}/skills
-        [HttpPost("{applicationId}/skills")]
         [Authorize(Roles = "Reviewer,Interviewer")]
+        [HttpPost("{applicationId}/skills")]
         public async Task<IActionResult> PostJobSkills(
             Guid applicationId,
             [FromBody] List<UpdateReviewSkillDto> skills)
@@ -191,7 +191,7 @@ namespace RecruitmentManagementSystem.API.Controllers
 
 
         //GET /api/applications/{id}/reviews/all
-        [Authorize(Roles = "Recruiter")]
+        [Authorize(Roles = "Recruiter,Interviewer")]
         [HttpGet("{applicationId}/reviews/all")]
         public async Task<IActionResult> GetAllReviews(Guid applicationId)
         {
@@ -201,7 +201,7 @@ namespace RecruitmentManagementSystem.API.Controllers
         }
 
         //GET /api/applications/{id}/reviews get user specific only
-        [Authorize(Roles = "Reviewer")]
+        [Authorize(Roles = "Reviewer,Interviewer")]
         [HttpGet("{applicationId}/reviews")]
         public async Task<IActionResult> GetMyReviews(Guid applicationId)
         {
@@ -212,8 +212,8 @@ namespace RecruitmentManagementSystem.API.Controllers
         }
 
         // PUT /api/applications/{id}/reviews
-        [HttpPut("{applicationId}/reviews")]
         [Authorize(Roles = "Reviewer")]
+        [HttpPut("{applicationId}/reviews")]
         public async Task<IActionResult> UpdateMyReviews(Guid applicationId, [FromBody] List<UpdateReviewCommentDto> comments)
         {
 
@@ -224,7 +224,7 @@ namespace RecruitmentManagementSystem.API.Controllers
 
         //GET /api/applications/{applicationId}/reviews/status
         // check if reviewer already reviewer has submitted their review
-        [Authorize(Roles = "Reviewer")]
+        [Authorize(Roles = "Reviewer,Interviewer")]
         [HttpGet("{applicationId}/reviews/status")]
         public async Task<IActionResult> GetMyReviewStatus(Guid applicationId)
         {

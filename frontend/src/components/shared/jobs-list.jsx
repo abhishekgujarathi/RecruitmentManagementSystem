@@ -16,7 +16,7 @@ const JobList = ({ heading }) => {
       try {
         const response = await api.get("/Jobs");
         setJobs(response.data);
-        console.log(response.data);
+        // console.log(response.data);
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
       } finally {

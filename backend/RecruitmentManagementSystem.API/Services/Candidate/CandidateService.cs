@@ -23,7 +23,9 @@ namespace RecruitmentManagementSystem.API.Services.Candidate
         Task<bool> DeleteProfileAsync(Guid candidateProfileId);
         Task<bool> HasProfileAsync(Guid userId);
 
-        
+        Task<List<MyApplicationDto>> GetMyApplicationsAsync(Guid userId);
+
+
 
         // ??? for later toseperate everythin
     }
@@ -187,8 +189,22 @@ namespace RecruitmentManagementSystem.API.Services.Candidate
             throw new NotImplementedException();
         }
 
-        
 
+        public async Task<List<MyApplicationDto>> GetMyApplicationsAsync(Guid userId)
+        {
+            return await _context.JobApplications
+                .Where(a => a.CandidateProfile.UserId == userId)
+                .OrderByDescending(a => a.ApplicationDate)
+                .Select(a => new MyApplicationDto
+                {
+                    ApplicationId = a.JobApplicationId,
+                    JobId = a.JobId,
+                    JobTitle = a.Job.JobDescription.Title,
+                    ApplicationDate = a.ApplicationDate,
+                    CurrentStatus = a.CurrentStatus
+                })
+                .ToListAsync();
+        }
     }
 
 }
