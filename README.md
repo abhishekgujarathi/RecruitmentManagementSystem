@@ -2,7 +2,7 @@
 
 # Recruitment Process Management System
 
-![DB Design](./documents/ERDiagram - RMPS.png)
+![DB Design](./documents/ERDiagram-RMPS.png)
 
 ---
 
