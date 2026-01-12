@@ -89,22 +89,23 @@ const JobApplicantsList = () => {
 
   return (
     <div className="px-4 space-y-8">
-      {STAGES.map((stage) => {
+      {STAGES.map((stage, idx) => {
         const stageApplicants = applicants.filter(
           (a) => a.currentStatus === stage
         );
 
         // return nothin if there are no candidate on that stage
-        if (stageApplicants.length === 0) return <></>;
+        if (stageApplicants.length === 0) return null;
 
         const nextStage = TO_STAGE[STAGES.indexOf(stage)];
         return (
-          <div key={stage}>
+          <div key={`${stage}_${idx}`}>
             <h2 className="text-xl font-semibold mb-2">{stage}</h2>
             <ApplicantsTable
               applicants={stageApplicants}
               nextStage={nextStage}
               onBulkStatusChange={handleStatusChange}
+              stageTitle={stage}
             />
           </div>
         );

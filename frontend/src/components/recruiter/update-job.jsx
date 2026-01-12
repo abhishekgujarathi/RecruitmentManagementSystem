@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "../../services/api";
 import { useNavigate, useParams } from "react-router-dom";
+import SkillComboBox from "../shared/skillComboBox";
 
 const UpdateJobForm = () => {
   const { jobId } = useParams();
@@ -26,6 +27,7 @@ const UpdateJobForm = () => {
     minimumExperienceReq: "",
     openingsCount: 1,
     deadlineDate: "",
+    skills: [],
   });
   const [loading, setLoading] = useState(false);
 
@@ -33,24 +35,29 @@ const UpdateJobForm = () => {
     const fetchJob = async () => {
       try {
         const res = await api.get(`/Jobs/${jobId}`);
-        const job = res.data.jobDescription || res.data;
+
+        const { jobDescription, jobSkills, openingsCount, deadlineDate } =
+          res.data;
+
         setFormData({
-          title: job.title || "",
-          details: job.details || "",
-          typeName: job.jobType || job.typeName || "",
-          responsibilities: job.responsibilities || "",
-          location: job.location || "",
-          minimumExperienceReq: job.minimumExperienceReq || "",
-          openingsCount: res.data.openingsCount || 1,
-          deadlineDate: res.data.deadlineDate
-            ? new Date(res.data.deadlineDate).toISOString().split("T")[0]
+          title: jobDescription.title || "",
+          details: jobDescription.details || "",
+          typeName: jobDescription.jobType || "",
+          responsibilities: jobDescription.responsibilities || "",
+          location: jobDescription.location || "",
+          minimumExperienceReq: jobDescription.minimumExperienceReq ?? "",
+          openingsCount: openingsCount || 1,
+          deadlineDate: deadlineDate
+            ? new Date(deadlineDate).toISOString().split("T")[0]
             : "",
+          skills: jobSkills || [],
         });
       } catch (error) {
         console.error("Failed to fetch job:", error);
         toast.error("Failed to load job details");
       }
     };
+
     fetchJob();
   }, [jobId]);
 
@@ -63,20 +70,42 @@ const UpdateJobForm = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      const skillIds = formData.skills.map((s) => s.skillId);
+      console.log(formData);
       await api.patch(`/Recruiters/jobs/${jobId}`, {
         ...formData,
         minimumExperienceReq: parseInt(formData.minimumExperienceReq || 0),
         openingsCount: parseInt(formData.openingsCount || 1),
         responsibilities: formData.responsibilities?.trim() || null,
+        skillIds: skillIds,
       });
       toast.success("Job updated successfully!");
-      navigate(`/recruiter/jobs/${jobId}`);
+      navigate(`/employee/jobs/${jobId}`);
     } catch (error) {
       console.error("Failed to update job:", error);
       toast.error(error.response?.data?.message || "Failed to update job");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSkillSelect = (skillId, skillName) => {
+    setFormData((prev) => {
+      // prevent duplicates
+      if (prev.skills.some((s) => s.skillId === skillId)) return prev;
+
+      return {
+        ...prev,
+        skills: [...prev.skills, { skillId, skillName }],
+      };
+    });
+  };
+
+  const removeSkill = (skillId) => {
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((s) => s.skillId !== skillId),
+    }));
   };
 
   return (
@@ -180,6 +209,36 @@ const UpdateJobForm = () => {
                 onChange={handleChange}
               />
             </div>
+            <div>
+              {console.log(formData.skills)}
+              <Label>Required Skills</Label>
+
+              <SkillComboBox
+                value={null}
+                intialLabel="Add skill"
+                onChange={handleSkillSelect}
+              />
+
+              {formData.skills.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.skills.map((skill) => (
+                    <span
+                      key={skill.skillId}
+                      className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-sm"
+                    >
+                      {skill.skillName}
+                      <button
+                        type="button"
+                        className="text-red-500"
+                        onClick={() => removeSkill(skill.skillId)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <CardFooter className="p-0 pt-4 flex flex-col gap-3">
               <Button type="submit" disabled={loading} className="w-full">
@@ -190,7 +249,7 @@ const UpdateJobForm = () => {
                 variant="outline"
                 disabled={loading}
                 className="w-full"
-                onClick={() => navigate(`/recruiter/jobs/${jobId}`)}
+                onClick={() => navigate(`/employee/jobs/${jobId}`)}
               >
                 Cancel
               </Button>

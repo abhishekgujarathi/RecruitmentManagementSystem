@@ -12,5 +12,6 @@ namespace RecruitmentManagementSystem.API.DTOS.Request
         public string? TypeName { get; set; }
         public int? OpeningsCount { get; set; }
         public DateTime? DeadlineDate { get; set; }
+        public List<Guid>? SkillIds { get; set; }
     }
 }

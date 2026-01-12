@@ -39,7 +39,7 @@ namespace RecruitmentManagementSystem.API.Data
 
 
         // --- review ---
-        // public DbSet<JobReviewer> JobReviewers { get; set; }
+         public DbSet<JobReviewer> JobReviewers { get; set; }
         public DbSet<AssignedReviewer> AssignedReviewers { get; set; }
         public DbSet<ApplicationSkill> ApplicationSkills { get; set; }
         public DbSet<ReviewComment> ReviewComments { get; set; }
@@ -50,6 +50,8 @@ namespace RecruitmentManagementSystem.API.Data
         public DbSet<JobInterviewRound> JobInterviewRounds { get; set; }
         public DbSet<ApplicationInterviewRound> ApplicationInterviewRounds { get; set; }
         public DbSet<InterviewPanelMember> InterviewPanelMembers { get; set; }
+        public DbSet<InterviewFeedback> InterviewFeedbacks { get; set; }
+        public DbSet<InterviewSkillRating> InterviewSkillRatings { get; set; }
 
         // --- interview ---
 
@@ -239,6 +241,12 @@ namespace RecruitmentManagementSystem.API.Data
                 .WithMany(ja => ja.ReviewComments)
                 .HasForeignKey(rc => rc.JobApplicationId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<JobReviewer>()
+               .HasOne(jr => jr.Reviewer)
+               .WithMany()
+               .HasForeignKey(jr => jr.ReviewerId)
+               .OnDelete(DeleteBehavior.NoAction);
             // job application and review
 
 

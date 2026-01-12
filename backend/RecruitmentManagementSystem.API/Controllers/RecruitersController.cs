@@ -130,5 +130,81 @@ namespace RecruitmentManagementSystem.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        // get list of employes to add as reviewer
+        [Authorize(Roles = "Recruiter")]
+        [HttpGet("employees/reviewer")]
+        public async Task<IActionResult> GetReviewerEmployees()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+                // parsing string to guid
+                Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+
+
+                var result = await _recruitersService.AllReviewersAsync();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
+
+
+        [Authorize(Roles = "Recruiter")]
+        [HttpPost("jobs/{jobId}/defaultReviewer")]
+        public async Task<IActionResult> AssignDefaultReviewer(Guid jobId, [FromBody] AssignJobReviewerRequestDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            // parsing string to guid
+            Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+
+            var success = await _recruitersService.AssignDefaultJobReviewerAsync(jobId, dto.ReviewerId, recruiterId);
+
+            if (!success)
+                return NotFound("Job not found");
+
+            return Ok(new { message = "Default reviewer assigned successfully" });
+        }
+
+
+        [Authorize(Roles = "Recruiter")]
+        [HttpDelete("jobs/{jobId}/defaultReviewer")]
+        public async Task<IActionResult> RemoveDefaultReviewer(Guid jobId, [FromBody] AssignJobReviewerRequestDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            // parsing string to guid
+            Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+
+            var success = await _recruitersService.RemoveDefaultJobReviewerAsync(jobId, dto.ReviewerId, recruiterId);
+
+            if (!success)
+                return NotFound("Job not found");
+
+            return Ok(new { message = "Default reviewer removed successfully" });
+        }
+
+        [Authorize(Roles = "Recruiter")]
+        [HttpGet("jobs/{jobId}/defaultReviewer")]
+        public async Task<IActionResult> GetDefaultReviewer(Guid jobId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            // parsing string to guid
+            Guid.TryParse(userIdClaim?.Value, out Guid recruiterId);
+
+            var success = await _recruitersService.GetDefaultJobReviewerAsync(jobId);
+
+
+            return Ok(success);
+        }
+
+
     }
+}

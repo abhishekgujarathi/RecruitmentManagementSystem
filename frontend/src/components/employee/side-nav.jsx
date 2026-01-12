@@ -18,9 +18,7 @@ const EmployeeSideNav = () => {
   menu.push(
     // common for all employees
     { title: "Assigned Applications", path: "/employee/applications" },
-    { title: "My Reviews", path: "/employee/reviews" },
-    { title: "Notifications", path: "/employee/notifications" },
-    { title: "Profile", path: "/employee/profile" }
+    { title: "Interviews", path: "/employee/interviews" }
   );
 
   return (

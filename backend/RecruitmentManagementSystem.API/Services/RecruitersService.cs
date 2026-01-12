@@ -17,7 +17,7 @@ namespace RecruitmentManagementSystem.API.Services
         public Task<JobResponseDto?> CreateJobAsync(JobCreateRequestDto request, Guid recruiterId);
         //return created job
         // update-job
-        public Task<JobResponseDto?> UpdateJobAsync(Guid jobId, JobUpdateRequestDto request, Guid recruiterId);
+        public Task<bool?> UpdateJobAsync(Guid jobId, JobUpdateRequestDto request, Guid recruiterId);
         //return updated job
 
         // delete-job
@@ -27,6 +27,11 @@ namespace RecruitmentManagementSystem.API.Services
 
         //list of emplyees return
         Task<List<KeyValuePair<Guid, string>>> GetAllEmployeesForReviewAsync(Guid applicationId);
+        Task<List<KeyValuePair<Guid, string>>> AllReviewersAsync();
+
+        Task<bool> AssignDefaultJobReviewerAsync(Guid jobId,Guid reviewerId,Guid assignedByUserId);
+        Task<bool> RemoveDefaultJobReviewerAsync(Guid jobId, Guid reviewerId, Guid recruiterId);
+        Task<List<KeyValuePair<Guid, string>>> GetDefaultJobReviewerAsync(Guid jobId);
     }
 
 
@@ -95,7 +100,14 @@ namespace RecruitmentManagementSystem.API.Services
                 DeadlineDate = job.DeadlineDate,
                 CreatedDate = job.CreatedDate,
                 LastModifiedDate = job.LastModifiedDate,
-                CreatedByUserId = recruiterId
+                CreatedByUserId = recruiterId,
+                JobSkills = job.JobSkills
+                        .Select(js => new JobSkillDto
+                        {
+                            SkillId = js.SkillId,
+                            SkillName = js.Skill.Name
+                        })
+                        .ToList(),
             };
         }
 
@@ -131,11 +143,12 @@ namespace RecruitmentManagementSystem.API.Services
             return true;
         }
 
-        public async Task<JobResponseDto?> UpdateJobAsync(Guid jobId, JobUpdateRequestDto request, Guid recruiterId)
+        public async Task<bool?> UpdateJobAsync(Guid jobId, JobUpdateRequestDto request, Guid recruiterId)
         {
             var job = await _context.Jobs
                 .Include(j => j.JobDescription)
                     .ThenInclude(jd => jd.JobType)
+                .Include(j => j.JobSkills)
                 .FirstOrDefaultAsync(j => j.JobId == jobId);
 
             if (job == null)
@@ -188,12 +201,37 @@ namespace RecruitmentManagementSystem.API.Services
 
             job.LastModifiedDate = DateTime.UtcNow;
 
+            if (request.SkillIds != null)
+            {
+                // remove existing skills
+                _context.JobSkills.RemoveRange(job.JobSkills);
+
+                // validate skills exist
+                var validSkillIds = await _context.Skills
+                    .Where(s => request.SkillIds.Contains(s.SkillId))
+                    .Select(s => s.SkillId)
+                    .ToListAsync();
+
+                if (validSkillIds.Count != request.SkillIds.Count)
+                    throw new ArgumentException("One or more skills are invalid");
+
+                // add new skills
+                job.JobSkills = validSkillIds
+                    .Select(skillId => new JobSkill
+                    {
+                        JobId = job.JobId,
+                        SkillId = skillId
+                    })
+                    .ToList();
+            }
+
             await _context.SaveChangesAsync();
 
             // reload to get the updated JobType
-            await _context.Entry(job.JobDescription).Reference(jd => jd.JobType).LoadAsync();
+            //await _context.Entry(job.JobDescription).Reference(jd => jd.JobType).LoadAsync();
 
-            return MapToResponseDto(job);
+            //return MapToResponseDto(job);
+            return false;
         }
 
 
@@ -215,7 +253,14 @@ namespace RecruitmentManagementSystem.API.Services
                 DeadlineDate = job.DeadlineDate,
                 CreatedDate = job.CreatedDate,
                 LastModifiedDate = job.LastModifiedDate,
-                CreatedByUserId = job.CreatedByUserId
+                CreatedByUserId = job.CreatedByUserId,
+                JobSkills = job.JobSkills
+                        .Select(js => new JobSkillDto
+                        {
+                            SkillId = js.SkillId,
+                            SkillName = js.Skill.Name
+                        })
+                        .ToList(),
             };
         }
 
@@ -234,13 +279,13 @@ namespace RecruitmentManagementSystem.API.Services
                     u.IsActive &&
                     u.UserType.TypeName == "Employee"
 
-                    // returning all employees
-                    // && u.EmployeeUserRoles.Any(eur =>
-                    //    //eur.EmployeeRole.RoleName == "Reviewer"
-                    //) 
-                    &&
-                    // filltring alredy assigned to the application id
-                    !assignedReviewerIds.Contains(u.UserId)
+                // returning all employees
+                // && u.EmployeeUserRoles.Any(eur =>
+                //    //eur.EmployeeRole.RoleName == "Reviewer"
+                //) 
+                //&&
+                // filltring alredy assigned to the applicatwion id
+                //!assignedReviewerIds.Contains(u.UserId)
                 )
                 .Select(u => new KeyValuePair<Guid, string>(
                     u.UserId,
@@ -249,6 +294,97 @@ namespace RecruitmentManagementSystem.API.Services
                 .ToListAsync();
 
             return result;
+        }
+        public async Task<List<KeyValuePair<Guid, string>>> AllReviewersAsync()
+        {
+
+            // getting alredy assigned reviewers
+            var assignedReviewerIds = await _context.AssignedReviewers
+               //.Where(ar => ar.JobApplicationId == applicationId)
+               .Select(ar => ar.ReviewerUserId)
+               .ToListAsync();
+
+            var result = await _context.Users
+                .Where(u =>
+                    u.IsActive &&
+                    u.UserType.TypeName == "Employee"
+
+                // returning all employees
+                 && u.EmployeeUserRoles.Any(eur =>
+                    eur.EmployeeRole.RoleName == "Reviewer"
+                )
+                //&&
+                // filltring alredy assigned to the application id
+                //!assignedReviewerIds.Contains(u.UserId)
+                )
+                .Select(u => new KeyValuePair<Guid, string>(
+                    u.UserId,
+                    u.Fname + " " + u.Lname
+                ))
+                .ToListAsync();
+
+            return result;
+        }
+
+
+        public async Task<bool> AssignDefaultJobReviewerAsync(Guid jobId,Guid reviewerId,Guid assignedByUserId)
+        {
+            var jobExists = await _context.Jobs.AnyAsync(j => j.JobId == jobId);
+            if (!jobExists) return false;
+
+            var alreadyAssigned = await _context.JobReviewers.AnyAsync(jr =>
+                jr.JobId == jobId &&
+                jr.ReviewerId == reviewerId &&
+                jr.IsActive);
+
+            if (alreadyAssigned)
+                return true; 
+
+            var jobReviewer = new JobReviewer
+            {
+                JobReviewerId = Guid.NewGuid(),
+                JobId = jobId,
+                ReviewerId = reviewerId,
+                AssignedBy = assignedByUserId,
+                IsActive = true
+            };
+
+            _context.JobReviewers.Add(jobReviewer);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+
+        public async Task<bool> RemoveDefaultJobReviewerAsync(Guid jobId, Guid reviewerId, Guid recruiterId)
+        {
+            var jobReviewer = await _context.JobReviewers
+                .FirstOrDefaultAsync(jr =>
+                    jr.JobId == jobId &&
+                    jr.ReviewerId == reviewerId &&
+                    jr.IsActive);
+
+            if (jobReviewer == null)
+                return false;
+
+            jobReviewer.IsActive = false;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<KeyValuePair<Guid, string>>> GetDefaultJobReviewerAsync(Guid jobId)
+        {
+            var reviewers = await _context.JobReviewers
+                .Include(jr=>jr.Reviewer)
+                .Where(jr => jr.JobId == jobId && jr.IsActive)
+                .Select(jr => new KeyValuePair<Guid, string>(
+                    jr.ReviewerId,
+                    jr.Reviewer.Fname + " " + jr.Reviewer.Lname
+                ))
+                .ToListAsync();
+
+            return reviewers;
         }
     }
 }

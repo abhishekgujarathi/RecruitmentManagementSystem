@@ -15,8 +15,11 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import api from "@/services/api";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function SignupForm({ ...props }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fname: "",
     lname: "",
@@ -38,11 +41,14 @@ export function SignupForm({ ...props }) {
     try {
       const response = await api.post("/Auth/register", formData);
       console.log("Registration success:", response.data);
+      toast("succussfully registered");
+      navigate("/login");
     } catch (error) {
       console.error(
         "Registration failed:",
         error.response?.data || error.message
       );
+      toast.error("user already exists or invalid inputs.");
     }
   };
 

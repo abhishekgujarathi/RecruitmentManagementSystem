@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import JobApplicantsList from "../components/recruiter/applicants-list";
 import JobInterviewRoundsSection from "../components/recruiter/JobInterviewRoundsSection";
+import DefaultReviewer from "../components/recruiter/DefaultReviewer";
 
 const JobDetail = () => {
   const { jobId } = useParams();
@@ -35,8 +36,9 @@ const JobDetail = () => {
       try {
         setLoading(true);
         const res = await api.get(`/Jobs/${jobId}`);
-        setJob(res.data);
         console.log(res.data);
+        setJob(res.data);
+        // console.log(res.data);
       } catch (err) {
         console.error("Failed to fetch job:", err);
         toast.error("Could not load job details.");
@@ -47,13 +49,12 @@ const JobDetail = () => {
     fetchJob();
   }, [jobId]);
 
-  // --- HANDLERS ---
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this job?")) return;
     try {
       await api.delete(`/Recruiters/jobs/${jobId}`);
       toast.success("Job deleted successfully!");
-      navigate("/recruiter/jobs");
+      navigate("/employee/jobs");
     } catch (err) {
       toast.error("Delete failed.");
     }
@@ -74,7 +75,6 @@ const JobDetail = () => {
 
   return (
     <div className="container mx-auto px-4">
-      {/* Back Button */}
       <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
       </Button>
@@ -103,6 +103,16 @@ const JobDetail = () => {
                 <p className="text-muted-foreground whitespace-pre-line">
                   {job.jobDescription.responsibilities ||
                     "Standard duties apply."}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Skills</h3>
+                <p className="text-muted-foreground flex flex-row gap-2">
+                  {job.jobSkills.map((s) => {
+                    return (
+                      <span className="border p-2  w-fit">{s.skillName}</span>
+                    );
+                  })}
                 </p>
               </div>
             </CardContent>
@@ -147,12 +157,12 @@ const JobDetail = () => {
                   </div>
                 )}
 
-                {/* 2. recruiter */}
+                {/* recruiter */}
                 {isLoggedIn && employeeRoles.includes("Recruiter") && (
                   <div className="flex flex-col gap-3">
                     <Button
                       className="w-full"
-                      onClick={() => navigate(`/recruiter/update-job/${jobId}`)}
+                      onClick={() => navigate(`/employee/update-job/${jobId}`)}
                     >
                       <Edit className="mr-2 h-4 w-4" /> Edit Job
                     </Button>
@@ -161,8 +171,9 @@ const JobDetail = () => {
                       className="w-full"
                       onClick={handleDelete}
                     >
-                      <Trash2 className="mr-2 h-4 w-4" /> Close Posting
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete Job
                     </Button>
+                    <Button variant="outline">Close Position</Button>
                   </div>
                 )}
 
@@ -187,7 +198,10 @@ const JobDetail = () => {
       {/* job interview rounds */}
       <div className="container py-4 mt-8 border">
         {isLoggedIn && employeeRoles.includes("Recruiter") && (
-          <JobInterviewRoundsSection jobId={jobId} />
+          <>
+            <DefaultReviewer jobId={jobId} />
+            <JobInterviewRoundsSection jobId={jobId} />
+          </>
         )}
       </div>
 

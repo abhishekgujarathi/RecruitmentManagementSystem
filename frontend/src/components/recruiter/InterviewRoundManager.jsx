@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,66 +13,122 @@ import api from "../../services/api";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
+import InterviewFeedbackSection from "./InterviewFeedBackSection";
+import InterviewFeedbackForm from "../interviewer/InterviewFeedbackForm";
 
-const InterviewRoundManager = ({
-  round,
-  onSaveSchedule,
-  onSaveMeetLink,
-  onRefresh,
-}) => {
+const InterviewRoundManager = ({ round, onRefresh }) => {
+  const { applicationId } = useParams();
+  console.log(round);
   const [scheduledAt, setScheduledAt] = useState(
     round.scheduledAt?.slice(0, 16) || ""
   );
   const [meetLink, setMeetLink] = useState(round.meetLink || "");
   const [employees, setEmployees] = useState([]);
+  const [panelMembers, setPanelMembers] = useState(round.panelMembers);
   const [interviewerId, setInterviewerId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [roundDisabled, setroundDisabled] = useState(
+    round.status == "Pending" ||
+      round.status == "Completed" ||
+      round.status == "Rejected"
+  );
 
-  // show interviewer assign only if round status is not complete
-  const disabled = round.status === "Completed";
+  const [disabled, _] = useState(
+    round.status === "Completed" || round.status === "Rejected"
+  );
 
-  const { applicationId } = useParams();
+  const getEmployees = async () => {
+    try {
+      const res = await api.get(`/Recruiters/employees/${applicationId}`);
+      console.log("emploo", res.data);
+      setEmployees(res.data);
+    } catch (er) {
+      toast.error("Failed to load employees");
+    }
+  };
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      if (!disabled) {
-        try {
-          const res = await api.get(`/Recruiters/employees/${applicationId}`);
-          setEmployees(res.data);
-        } catch {
-          toast.error("Failed to load employees");
-        }
-      }
-    };
+    if (disabled) return;
 
-    fetchEmployees();
-  }, [applicationId]);
+    getEmployees();
+  }, [applicationId, disabled]);
 
-  const assignInterviewer = async () => {
+  const addPanelMember = () => {
     if (!interviewerId) return;
+
+    const employee = employees.find((e) => e.key === interviewerId);
+    if (!employee) return;
+
+    setPanelMembers((p) => [
+      ...p,
+      {
+        interviewerId: interviewerId,
+        interviewerName: employee.value,
+      },
+    ]);
+
+    setInterviewerId("");
+  };
+
+  const removePanelMember = (userId) => {
+    setPanelMembers((p) => p.filter((m) => m.userId !== userId));
+  };
+
+  const saveRound = async () => {
     try {
       setLoading(true);
-      await api.post(
-        `Interview/applications/rounds/${round.applicationInterviewRoundId}/panelMembers`,
-        { userId: interviewerId }
-      );
-      toast.success("Panel member assigned");
-      setInterviewerId("");
+      const paylod = {
+        roundId: round.applicationInterviewRoundId,
+        scheduledAt: scheduledAt,
+        meetLink: meetLink,
+        panelMembers: panelMembers.map((p) => p.interviewerId),
+      };
+      console.log(paylod);
+      await api.put(`/Interview/applications/rounds/`, paylod);
+
+      toast.success("Round saved");
       onRefresh();
     } catch {
-      toast.error("Failed to assign member");
+      toast.error("Failed to save round");
     } finally {
       setLoading(false);
     }
   };
 
-  const removeMember = async (id) => {
+  const notifyAll = async () => {
     try {
-      await api.delete(`Interview/applications/rounds/panelMembers/${id}`);
-      toast.success("Removed");
-      onRefresh();
+      await api.post(
+        `/Interview/applications/rounds/${round.applicationInterviewRoundId}/notify`
+      );
+      toast.success("Notifications sent");
     } catch {
-      toast.error("Failed to remove member");
+      toast.error("Failed to notify");
+    }
+  };
+
+  const rejectRound = async () => {
+    try {
+      await api.post(
+        `/Interview/applications/rounds/${round.applicationInterviewRoundId}/reject`
+      );
+      toast.success("Round rejected");
+      onRefresh();
+    } catch (err) {
+      toast.error("Failed to reject round");
+      console.error(err);
+    }
+  };
+
+  const completeRound = async () => {
+    try {
+      await api.post(
+        `/Interview/applications/rounds/${round.applicationInterviewRoundId}/complete`
+      );
+      toast.success("Round completed");
+      onRefresh();
+    } catch (err) {
+      toast.error("Failed to complete round");
+      console.error(err);
     }
   };
 
@@ -86,54 +142,32 @@ const InterviewRoundManager = ({
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 flex flex-col gap-3">
-          <div className="flex flex-col md:flex-row gap-2 w-full items-center">
+          <div className="flex items-center gap-2">
             <label className="text-sm">Schedule</label>
             <Input
               type="datetime-local"
-              className="w-full md:w-48"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
               disabled={disabled}
             />
-            <Button
-              size="sm"
-              className="w-full md:w-auto"
-              disabled={disabled || !scheduledAt}
-              onClick={() =>
-                onSaveSchedule(round.applicationInterviewRoundId, scheduledAt)
-              }
-            >
-              Save
-            </Button>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-2 w-full items-center">
+          <div className="flex items-center gap-2">
             <label className="text-sm">Meet link</label>
             <Input
-              className="w-full md:w-64"
               placeholder="https://meet..."
               value={meetLink}
               onChange={(e) => setMeetLink(e.target.value)}
               disabled={disabled}
             />
-            <Button
-              size="sm"
-              className="w-full md:w-auto"
-              disabled={disabled || !meetLink}
-              onClick={() =>
-                onSaveMeetLink(round.applicationInterviewRoundId, meetLink)
-              }
-            >
-              Save
-            </Button>
           </div>
         </div>
 
-        <div className="md:w-64 w-full flex flex-col gap-2">
+        <div className="md:w-64 flex flex-col gap-2">
           {!disabled && (
             <>
               <Select value={interviewerId} onValueChange={setInterviewerId}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger>
                   <SelectValue placeholder="Select Employee" />
                 </SelectTrigger>
                 <SelectContent>
@@ -144,39 +178,55 @@ const InterviewRoundManager = ({
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                size="sm"
-                onClick={assignInterviewer}
-                disabled={loading || !interviewerId}
-              >
-                Assign
+
+              <Button size="sm" onClick={addPanelMember}>
+                Add
               </Button>
             </>
           )}
 
-          <div className="flex flex-wrap gap-2 text-sm font-extrabold">
-            {(round.panelMembers || []).map((pm) => (
+          <div className="flex flex-wrap gap-2 text-sm font-medium">
+            {panelMembers.map((pm) => (
               <div
-                key={pm.interviewPanelMemberId}
-                className="flex items-center gap-3 border p-2"
+                key={pm.userId}
+                className="flex items-center gap-2 border p-2"
               >
                 {pm.interviewerName}
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="text-white text-2xl"
-                  disabled={disabled}
-                  onClick={() => removeMember(pm.interviewPanelMemberId)}
-                >
-                  <Trash2 />
-                </Button>
+                {!disabled && (
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    onClick={() => removePanelMember(pm.userId)}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                )}
               </div>
             ))}
-            {round.panelMembers.length === 0 && (
-              <p className="text-xs text-muted-foreground">No panel members</p>
-            )}
           </div>
         </div>
+      </div>
+
+      <div className="flex justify-end gap-2 mt-4">
+        <Button onClick={saveRound} disabled={loading || disabled}>
+          Save Round
+        </Button>
+        <Button onClick={notifyAll} disabled={loading || disabled}>
+          Notify All
+        </Button>
+      </div>
+      <InterviewFeedbackSection
+        applicationId={applicationId}
+        roundId={round.applicationInterviewRoundId}
+      />
+
+      <div className="w-full flex justify-end gap-8">
+        <Button onClick={rejectRound} disabled={roundDisabled}>
+          Reject
+        </Button>
+        <Button onClick={completeRound} disabled={roundDisabled}>
+          Complete
+        </Button>
       </div>
     </Card>
   );

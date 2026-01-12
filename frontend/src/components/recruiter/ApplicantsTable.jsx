@@ -51,13 +51,15 @@ export default function ApplicantsTable({
 
     setSelected([]);
   };
-
-  const disabled = !(nextStage && selected.length > 0);
+  // console.log(stageTitle, stageTitle == "Hired");
+  const [disabled, setDisabled] = useState(
+    stageTitle == "Hired" ||
+      (nextStage && selected.length > 0) ||
+      stageTitle == "Rejected"
+  );
 
   return (
     <section className="space-y-4">
-      {stageTitle && <h3 className="text-lg font-medium">{stageTitle}</h3>}
-
       <div className="flex flex-wrap gap-3 items-center mb-2">
         <Input
           placeholder="Search name"
@@ -78,13 +80,15 @@ export default function ApplicantsTable({
           className="w-[160px]"
         />
 
-        <Button
-          disabled={disabled}
-          onClick={handleBulkMove}
-          className="ml-auto"
-        >
-          Move {selected.length} to {nextStage.name}
-        </Button>
+        {!disabled && (
+          <Button
+            disabled={disabled}
+            onClick={handleBulkMove}
+            className="ml-auto"
+          >
+            Move {selected.length} to {nextStage?.name}
+          </Button>
+        )}
       </div>
 
       <div className="border rounded-md max-h-[400px] overflow-y-auto">

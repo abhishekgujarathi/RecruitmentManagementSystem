@@ -142,15 +142,11 @@ const Application = () => {
         </CardContent>
       </Card>
 
-      {/* interview round and management */}
-      {authState.employeeRoles.includes("Recruiter") && (
-        <Card>
-          <CardContent>
-            <ApplicationReviewerManager applicationId={applicationId} />
-          </CardContent>
-        </Card>
-      )}
-      {/* reviews by reviewer */}
+      {console.log(authState.employeeRoles)}
+
+      <ApplicationReviewerManager applicationId={applicationId} />
+
+      {/* reviewer comments and skills */}
       {authState.employeeRoles.includes("Reviewer") &&
         myReviewStatus.isAssigned && (
           <ReviewerReviewSection applicationId={applicationId} />
@@ -161,17 +157,11 @@ const Application = () => {
         applicationSummary.currentStatus,
         "InterviewInProgress"
       )}
-      {authState.employeeRoles.includes("Recruiter") &&
-        applicationSummary.currentStatus == "InterviewInProgress" && (
-          <Card>
-            <CardContent>
-              <ApplicationInterviewSection
-                applicationId={applicationId}
-                applicationStatus={applicationSummary.currentStatus}
-              />
-            </CardContent>
-          </Card>
-        )}
+
+      <ApplicationInterviewSection
+        applicationId={applicationId}
+        applicationStatus={applicationSummary.currentStatus}
+      />
     </div>
   );
 };
