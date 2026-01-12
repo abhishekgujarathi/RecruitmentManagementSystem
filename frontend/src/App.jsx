@@ -36,6 +36,8 @@ import EmployeeSideNav from "./components/employee/side-nav";
 import ReviewPage from "./pages/reviewer/ReviewPage";
 import MyInterviewsPage from "./pages/interviewer/MyInterviewsPage";
 import MyApplications from "./pages/candidate/MyApplications";
+import CandidateVerification from "./pages/candidate/CandidateVerification ";
+import HrVerification from "./pages/hr/HrVerification";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -102,6 +104,10 @@ function App() {
             <Route path="jobs" element={<Jobs pageHeading={"Jobs"} />} />
             <Route path="jobs/:jobId" element={<JobDetail />} />
             <Route path="applied-jobs" element={<MyApplications />} />
+            <Route
+              path="verification/:verificationId"
+              element={<CandidateVerification />}
+            />
           </Route>
 
           {/* recruiter routee */}
@@ -142,6 +148,10 @@ function App() {
             />
 
             {/* for application */}
+            <Route
+              path="verifications/:verificationId"
+              element={<HrVerification />}
+            />
             <Route path="applications" element={<AssignedApplications />} />
             <Route path="interviews" element={<MyInterviewsPage />} />
             <Route

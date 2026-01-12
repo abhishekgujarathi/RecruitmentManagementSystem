@@ -53,6 +53,19 @@ const ApplicationInterviewSection = ({ applicationId, applicationStatus }) => {
     setInterviewRounds(newRounds);
   };
 
+  const pressHire = async () => {
+    try {
+      await api.patch(`Applications/${applicationId}/status`, {
+        newStatus: "Hired",
+        note: null,
+      });
+      toast("Candidate Hired");
+    } catch (err) {
+      console.log(err);
+      toast.error("some error");
+    }
+  };
+
   const addRound = () => {
     setInterviewRounds((p) => [
       ...p,
@@ -175,6 +188,7 @@ const ApplicationInterviewSection = ({ applicationId, applicationStatus }) => {
           )}
           {authState.employeeRoles.includes("Recruiter") &&
             (applicationStatus == "InterviewInProgress" ||
+              applicationStatus == "InterviewCompleted" ||
               applicationStatus == "Rejected" ||
               applicationStatus == "OnHold" ||
               applicationStatus == "Hired") && (
@@ -213,6 +227,7 @@ const ApplicationInterviewSection = ({ applicationId, applicationStatus }) => {
                 !interviewRounds[interviewRounds?.length - 1]?.status ==
                   "Completed" || applicationStatus == "Hired"
               }
+              onClick={pressHire}
             >
               Hire
             </Button>

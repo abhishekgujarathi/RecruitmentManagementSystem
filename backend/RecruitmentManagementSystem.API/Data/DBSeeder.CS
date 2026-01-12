@@ -20,6 +20,7 @@ namespace RecruitmentManagementSystem.API.Data
             var employeeTypeId = Guid.Parse("3B5143AA-62F9-49B8-BA06-3AE28505528E");
 
             var recruiterRoleId = Guid.Parse("A12961CE-53D2-4294-99CB-B7916DBCEC24");
+            var hrRoleId = Guid.Parse("A12961CE-53D2-4294-99CB-B7916DBCEC24");
             var reviewerRoleId = Guid.Parse("9C0D0137-9B2E-47D5-8DAC-8BC00BFD6E49");
             var interviewerRoleId = Guid.Parse("041C97A7-8CB7-4476-B7B3-5FF64BBBA57F");
 
@@ -106,7 +107,8 @@ namespace RecruitmentManagementSystem.API.Data
                     db.EmployeeRoles.AddRange(
                         new EmployeeRole { EmployeeRoleId = recruiterRoleId, RoleName = "Recruiter", IsActive = true },
                         new EmployeeRole { EmployeeRoleId = reviewerRoleId, RoleName = "Reviewer", IsActive = true },
-                        new EmployeeRole { EmployeeRoleId = interviewerRoleId, RoleName = "Interviewer", IsActive = true }
+                        new EmployeeRole { EmployeeRoleId = interviewerRoleId, RoleName = "Interviewer", IsActive = true },
+                        new EmployeeRole { EmployeeRoleId = hrRoleId, RoleName = "HR", IsActive = true }
                     );
                     await db.SaveChangesAsync();
                 }
@@ -347,7 +349,7 @@ namespace RecruitmentManagementSystem.API.Data
 
                 await EnsureUserAsync(new User
                 {
-                    UserId = Guid.NewGuid(),
+                    UserId = Guid.Parse("34E6F1F4-ADAB-4ACD-9FBE-D1C8D814F525"),
                     Fname = "Sneha",
                     Lname = "Reddy",
                     Email = "sneha@exp.com",
@@ -364,7 +366,8 @@ namespace RecruitmentManagementSystem.API.Data
                     db.EmployeeUserRoles.AddRange(
                         new EmployeeUserRole { UserId = recruiterUserId, EmployeeRoleId = recruiterRoleId, AssignedOn = DateTime.UtcNow },
                         new EmployeeUserRole { UserId = reviewerUserId, EmployeeRoleId = reviewerRoleId, AssignedOn = DateTime.UtcNow },
-                        new EmployeeUserRole { UserId = interviewerUserId, EmployeeRoleId = interviewerRoleId, AssignedOn = DateTime.UtcNow }
+                        new EmployeeUserRole { UserId = interviewerUserId, EmployeeRoleId = interviewerRoleId, AssignedOn = DateTime.UtcNow },
+                        new EmployeeUserRole { UserId = Guid.Parse("34E6F1F4-ADAB-4ACD-9FBE-D1C8D814F525"), EmployeeRoleId = hrRoleId, AssignedOn = DateTime.UtcNow }
                     );
                     await db.SaveChangesAsync();
                 }

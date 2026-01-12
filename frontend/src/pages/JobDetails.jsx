@@ -70,6 +70,23 @@ const JobDetail = () => {
     }
   };
 
+  const handleClose = async () => {
+    const reason = window.prompt(
+      "Please provide a reason for closing this position:"
+    );
+    if (!reason) return;
+
+    try {
+      const res = await api.patch(`/Recruiters/jobs/${jobId}/close`, {
+        reason,
+      });
+      toast.success(res.data.message);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to close job");
+    }
+  };
+
   if (loading) return <div className="p-10 text-center">Loading job...</div>;
   if (!job) return <div className="p-10 text-center">Job not found.</div>;
 
@@ -142,9 +159,20 @@ const JobDetail = () => {
               </div>
 
               <div className="pt-4 border-t">
+                {job.isClosed == "Closed" && (
+                  <div className="bg-red-50 border border-red-200 p-3 rounded-md text-sm">
+                    <p className="font-semibold text-red-600">
+                      Position Closed
+                    </p>
+                    <p className="text-muted-foreground mt-1">
+                      Reason: {job.reason || "Not provided"}
+                    </p>
+                  </div>
+                )}
+
                 {/* unloogged user */}
                 {!isLoggedIn && (
-                  <div className="space-y-3">
+                  <div className="space-y-3 mt-3">
                     <p className="text-xs text-center text-muted-foreground italic">
                       Sign in to apply for this position.
                     </p>
@@ -158,36 +186,48 @@ const JobDetail = () => {
                 )}
 
                 {/* recruiter */}
-                {isLoggedIn && employeeRoles.includes("Recruiter") && (
-                  <div className="flex flex-col gap-3">
-                    <Button
-                      className="w-full"
-                      onClick={() => navigate(`/employee/update-job/${jobId}`)}
-                    >
-                      <Edit className="mr-2 h-4 w-4" /> Edit Job
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={handleDelete}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete Job
-                    </Button>
-                    <Button variant="outline">Close Position</Button>
-                  </div>
-                )}
+                {isLoggedIn &&
+                  employeeRoles.includes("Recruiter") &&
+                  job.isClosed != "Closed" && (
+                    <div className="flex flex-col gap-3 mt-3">
+                      <Button
+                        className="w-full"
+                        onClick={() =>
+                          navigate(`/employee/update-job/${jobId}`)
+                        }
+                      >
+                        <Edit className="mr-2 h-4 w-4" /> Edit Job
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Job
+                      </Button>
+                      <Button variant="outline" onClick={handleClose}>
+                        Close Position
+                      </Button>
+                    </div>
+                  )}
 
                 {/* candidate */}
                 {isLoggedIn &&
-                  role == "Candidate" &&
+                  role === "Candidate" &&
                   (job.isApplied ? (
-                    <Button variant="ghost" className="w-full" size="lg">
+                    <Button variant="ghost" className="w-full mt-3" size="lg">
                       Already Applied
                     </Button>
                   ) : (
-                    <Button className="w-full" size="lg" onClick={handleApply}>
-                      Apply Now
-                    </Button>
+                    job.isClosed != "Closed" && (
+                      <Button
+                        className="w-full mt-3"
+                        size="lg"
+                        onClick={handleApply}
+                      >
+                        Apply Now
+                      </Button>
+                    )
                   ))}
               </div>
             </CardContent>
